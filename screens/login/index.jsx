@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import Galaxy from "@/assets/galaxy.png";
 import { Eye, EyeOff, BookOpen, Users, Award } from "lucide-react";
@@ -179,9 +180,12 @@ function LoginForm() {
         </button>
       </div>
 
-      <button className="w-full py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-lg shadow-purple-200">
+      <Link
+        href="/tutor-dashboard/Home"
+        className="block w-full text-center py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-lg shadow-purple-200"
+      >
         Login
-      </button>
+      </Link>
     </>
   );
 }
@@ -297,11 +301,10 @@ function TabButton({ children, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
-        active
+      className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${active
           ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow"
           : "text-gray-500 hover:text-gray-700"
-      }`}
+        }`}
     >
       {children}
     </button>

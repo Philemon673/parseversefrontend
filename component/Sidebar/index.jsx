@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import SidebarBg from "@/assets/sidebar-bg.png";
+import SidebarBg from "@/assets/contentsider.png";
 import {
   Home,
   BookOpen,
@@ -12,20 +13,21 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { icon: Home, label: "Home" },
-  { icon: BookOpen, label: "Course" },
-  { icon: FolderOpen, label: "Resources" },
-  { icon: MessageCircle, label: "Chat" },
-  { icon: Bell, label: "Notifications", badge: 2 },
-  { icon: Settings, label: "Settings" },
+  { icon: Home, label: "Home", href: "/tutor-dashboard/Home" },
+  { icon: BookOpen, label: "Course", href: "/tutor-dashboard/course" },
+  { icon: FolderOpen, label: "Profile", href: "/tutor-dashboard/profile" },
+  { icon: MessageCircle, label: "Chat", href: "/tutor-dashboard/chat" },
+  { icon: Bell, label: "Notifications", href: "/tutor-dashboard/notification", badge: 2 },
+  { icon: Settings, label: "Settings", href: "/tutor-dashboard/settings" },
 ];
+
 
 export default function Sidebar() {
   const [active, setActive] = useState("Home");
 
   return (
     <aside
-      className="w-[280px] flex-shrink-0 flex flex-col h-screen relative overflow-hidden"
+      className="w-[280px] flex-shrink-0 flex flex-col h-screen sticky top-0 overflow-hidden "
       style={{
         backgroundImage: `url(${SidebarBg.src})`,
         backgroundSize: "cover",
@@ -51,11 +53,12 @@ export default function Sidebar() {
 
         {/* Nav Items */}
         <nav className="flex flex-col gap-1">
-          {navItems.map(({ icon: Icon, label, badge }) => {
+          {navItems.map(({ icon: Icon, label, badge, href }) => {
             const isActive = active === label;
             return (
-              <button
+              <Link
                 key={label}
+                href={href}
                 onClick={() => setActive(label)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative ${
                   isActive
@@ -73,7 +76,7 @@ export default function Sidebar() {
                     {badge}
                   </span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>
