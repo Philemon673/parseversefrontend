@@ -38,7 +38,7 @@ export default function Navbar() {
           </div>
           <div className="text-right">
             <div className="text-sm font-semibold text-gray-800">Martin Nel</div>
-            <div className="text-xs text-purple-500 font-medium">VIP Member</div>
+            <div className="text-xs text-purple-500 font-medium">TUTOR</div>
           </div>
         </div>
 

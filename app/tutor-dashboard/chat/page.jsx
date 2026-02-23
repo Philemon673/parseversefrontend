@@ -94,7 +94,8 @@ function ChatHeader() {
             <span className="font-semibold text-sm text-gray-900">Machine Learning Forum</span>
             <VipBadge />
           </div>
-          <span className="text-xs text-green-500">6 members active</span>
+          <span className="text-xs text-green-500"> members <big>400</big> </span>
+          <span className="text-xs text-green-500"> active <big>6</big></span>
         </div>
       </div>
       <div className="flex items-center gap-2 text-gray-400 text-xs">
