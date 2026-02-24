@@ -294,6 +294,9 @@ export default function ChatForumsPage() {
               </div>
             ))}
           </div>
+            <button className="text-xs text-indigo-500 font-medium mt-3 hover:underline block text-right w-full">
+            View All
+          </button>
         </div>
 
         {/* Popular Topics 1 */}
@@ -317,7 +320,7 @@ export default function ChatForumsPage() {
 
         {/* Popular Topics 2 */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <h3 className="text-sm font-bold text-gray-800 mb-3">Popular Topics</h3>
+          <h3 className="text-sm font-bold text-gray-800 mb-3">Topic of the day</h3>
           <div className="flex flex-col gap-3">
             {popularTopics2.map((topic, i) => (
               <div key={i} className="flex items-start gap-2">
