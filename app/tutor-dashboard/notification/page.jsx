@@ -188,7 +188,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="p-2 bg-gray-50 min-h-screen">
+    <div className="p-2 bg-[#f2f3fa] min-h-screen">
       <div className="max-w-full-screen mx-auto flex flex-col gap-5">
 
         {/* Page Header */}

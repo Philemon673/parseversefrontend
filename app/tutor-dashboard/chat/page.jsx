@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile } from "lucide-react";
-
-// ── Mock Data ─────────────────────────────────────────────────────────────────
+import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile, Menu, X } from "lucide-react";
 
 const activeMembers = [
   { initials: "MN", name: "Martin Nel", role: "VIP Member", isVip: true, color: "from-indigo-400 to-purple-500" },
@@ -30,8 +28,6 @@ const initialMessages = [
   { id: 4, sender: "Mashok Khan", initials: "MK", color: "from-indigo-400 to-purple-500", text: "Great suggestions! I also found Coursera's TensorFlow specialization very structured and beginner-friendly.", time: "1 min ago", isOwn: false },
   { id: 5, sender: "You", initials: "RK", color: "from-purple-400 to-pink-500", text: "Agreed! The hands-on projects really help solidify the concepts.", time: "just now", isOwn: true },
 ];
-
-// ── Shared Sub Components ─────────────────────────────────────────────────────
 
 function Avatar(props) {
   const color = props.color || "from-indigo-400 to-purple-500";
@@ -78,12 +74,12 @@ function PostStats(props) {
   );
 }
 
-// ── Chat Architecture Components ──────────────────────────────────────────────
-
-// ChatHeader
+// ✅ FIXED: useState is now at the top of the function, not inside JSX
 function ChatHeader() {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-3 border-b rounded-2xl border p-4 border-gray-100 bg-white flex-shrink-0">
       <div className="flex items-center gap-3">
         <div className="relative">
           <Avatar initials="MK" className="w-9 h-9 text-xs" color="from-indigo-400 to-purple-500" />
@@ -94,24 +90,43 @@ function ChatHeader() {
             <span className="font-semibold text-sm text-gray-900">Machine Learning Forum</span>
             <VipBadge />
           </div>
-          <span className="text-xs text-green-500"> members <big>400</big> </span>
-          <span className="text-xs text-green-500"> active <big>6</big></span>
+          <span className="text-xs text-green-500">members <strong>400</strong></span>
+          <span className="text-xs text-green-500 ml-2">active <strong>6</strong></span>
         </div>
       </div>
-      <div className="flex items-center gap-2 text-gray-400 text-xs">
-        <MessageCircle className="w-4 h-4" />
-        <span>4,876 messages</span>
+
+      {/* ✅ FIXED: hamburger is now plain JSX inside the return, no nested return() */}
+      <div className="relative">
+        <button
+          onClick={() => setOpen(!open)}
+          className="p-2 rounded-xl hover:bg-gray-100 transition text-gray-500"
+        >
+          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        {open && (
+          <div className="absolute right-0 top-10 z-50 bg-white rounded-2xl border border-gray-100 shadow-lg p-3 min-w-[160px]">
+            <button className="w-full text-left px-3 py-2 pb-2 border-b border-transparent hover:border-blue-500 rounded-lg hover:bg-gray-100 transition text-sm font-medium pb-1">
+              Add member
+            </button>
+            <button className="w-full text-left px-3 py-2 pb-2 border-b border-transparent hover:border-blue-500 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
+              Remove Member
+            </button>
+            <button className="w-full text-left px-3 py-2 pb-2 border-b border-transparent hover:border-blue-500 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
+              Group Settings
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// MessageBubble
 function MessageBubble(props) {
   const msg = props.message;
   if (msg.isOwn) {
     return (
-      <div className="flex items-end justify-end gap-2">
+      <div className="flex items-end justify-end gap-2 ">
         <div className="flex flex-col items-end gap-1 max-w-[70%]">
           <div className="bg-indigo-600 text-white text-sm px-4 py-2.5 rounded-2xl rounded-br-sm leading-relaxed shadow-sm">
             {msg.text}
@@ -136,7 +151,6 @@ function MessageBubble(props) {
   );
 }
 
-// MessageList
 function MessageList(props) {
   const bottomRef = useRef(null);
 
@@ -156,7 +170,6 @@ function MessageList(props) {
   );
 }
 
-// ChatInput
 function ChatInput(props) {
   const [text, setText] = useState("");
 
@@ -203,7 +216,6 @@ function ChatInput(props) {
   );
 }
 
-// ChatPage (assembled)
 function ChatPage() {
   const [messages, setMessages] = useState(initialMessages);
 
@@ -229,30 +241,12 @@ function ChatPage() {
   );
 }
 
-// ── Main Page Export ──────────────────────────────────────────────────────────
-
 export default function ChatForumsPage() {
   const [search, setSearch] = useState("");
 
   return (
-    <div className="flex gap-5 p-5 bg-gray-50 h-screen overflow-hidden">
-
-      {/* Center Column */}
+    <div className="flex gap-5 p-5 bg-[#f2f3fa] h-screen overflow-hidden">
       <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-hidden">
-
-        {/* Search
-        <div className="relative flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search topics..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 placeholder-gray-400"
-          />
-        </div> */}
-
-        {/* Banner */}
         <div
           className="relative rounded-2xl overflow-hidden h-28 flex flex-col justify-center px-6 flex-shrink-0"
           style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #6d28d9 70%, #a855f7 100%)" }}
@@ -262,17 +256,12 @@ export default function ChatForumsPage() {
             Discuss everything related to machine learning, from algorithms to neural networks and beyond.
           </p>
         </div>
-
-        {/* ChatPage — takes remaining height */}
         <div className="flex-1 min-h-0">
           <ChatPage />
         </div>
       </div>
 
-      {/* Right Column */}
       <div className="w-[220px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto">
-
-        {/* Active Forum Members */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <h3 className="text-sm font-bold text-gray-800 mb-3">Active Forum Members</h3>
           <div className="flex flex-col gap-2.5">
@@ -294,12 +283,11 @@ export default function ChatForumsPage() {
               </div>
             ))}
           </div>
-            <button className="text-xs text-indigo-500 font-medium mt-3 hover:underline block text-right w-full">
+          <button className="text-xs text-indigo-500 font-medium mt-3 hover:underline block text-right w-full">
             View All
           </button>
         </div>
 
-        {/* Popular Topics 1 */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <h3 className="text-sm font-bold text-gray-800 mb-3">Popular Topics</h3>
           <div className="flex flex-col gap-3">
@@ -318,7 +306,6 @@ export default function ChatForumsPage() {
           </button>
         </div>
 
-        {/* Popular Topics 2 */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <h3 className="text-sm font-bold text-gray-800 mb-3">Topic of the day</h3>
           <div className="flex flex-col gap-3">
@@ -333,10 +320,7 @@ export default function ChatForumsPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );
 }
-
-

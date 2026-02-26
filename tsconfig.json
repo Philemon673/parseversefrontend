@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "component/Sidebar/index.jsx", "app/layout.jsx", "app/mentor dashboard/chat/page.jsx", "app/tutor-dashboard/chat/page.jsx"  ],
+, "component/Sidebar/index.jsx", "app/layout.jsx", "app/mentor dashboard/chat/page.jsx", "app/tutor-dashboard/chat/page.jsx", "app/tutor-dashboard/courses/page.jsx"  ],
   "exclude": ["node_modules"]
 }

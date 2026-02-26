@@ -1,18 +1,35 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Bell } from "lucide-react";
 
 const tabs = ["For You", "Trending", "Top"];
 
+const navItems = [
+  { label: "Home", href: "/tutor-dashboard/Home" },
+  { label: "Courses", href: "/tutor-dashboard/courses" },
+  { label: "Profile", href: "/tutor-dashboard/profile" },
+  { label: "Chat", href: "/tutor-dashboard/chat" },
+];
+
+// Named export for helper function
+export function activeNavlabel(navItems, defaultItems = "Home") {
+  const pathname = usePathname();
+  const activeItem = navItems.find(item => pathname.startsWith(item.href));
+  return activeItem ? activeItem.label : defaultItems;
+}
+
+// Default export for Navbar component
 export default function Navbar() {
   const [activeTab, setActiveTab] = useState("For You");
+  const pageTitle = activeNavlabel(navItems, "Home"); // dynamic title based on path
 
   return (
     <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0 shadow-sm">
       {/* Left — page title + tabs */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold text-gray-900">Home</h1>
+        <h1 className="text-xl font-bold text-gray-900">{pageTitle}</h1>
         <div className="flex items-center gap-6 text-sm">
           {tabs.map((tab) => (
             <button

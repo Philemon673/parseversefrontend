@@ -4,7 +4,7 @@ import Profile from "@/assets/profile1.jpg";
 import { useState } from "react";
 import { Camera, ChevronRight, Trash2, HelpCircle, Users, UserPlus } from "lucide-react";
 
-const tabs = ["Personal Details", "Notification", "Privacy", "Payment"];
+const tabs = ["Personal Details", "Details", "Resources","Schedules", "Payment"];
 
 function CrownIcon() {
   return (
@@ -72,9 +72,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("Personal Details");
 
   return (
-    <div className="flex gap-5 p-4 bg-gray-50">
+    <div className="flex gap-5 p-4 bg-[#f2f3fa] ">
       {/* ── Left Panel ─────────────────────────────────────────────── */}
-      <div className="w-[200px] flex-shrink-0 flex flex-col gap-4">
+      <div className="w-[200px] flex-shrink-0 flex flex-col gap-4 shadow-lg rounded-2xl border border-gray-100 ">
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
 
           {/* Cover / Avatar */}
@@ -85,21 +85,19 @@ export default function ProfilePage() {
             </button>
             <div className="absolute bottom-2 left-3">
               <p className="text-white font-bold text-sm drop-shadow">Mashok Khan</p>
-              <span className="flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full w-fit mt-0.5">
-                ▶ VIP
-              </span>
+              
             </div>
           </div>
 
           {/* Stats */}
           <div className="flex items-center justify-around px-3 py-2 border-b border-gray-100">
             <div className="text-center">
-              <span className="text-gray-900 font-bold text-sm">08</span>
+              <span className="text-gray-900 font-bold text-sm p-1 bg-red-100 rounded-full">01</span>
               <p className="text-gray-400 text-[10px]">In Progress</p>
             </div>
             <div className="w-px h-6 bg-gray-100" />
             <div className="text-center">
-              <span className="text-gray-900 font-bold text-sm">23</span>
+              <span className="text-gray-900 font-bold text-sm p-1 bg-green-200 rounded-full">05</span>
               <p className="text-gray-400 text-[10px]">Completed</p>
             </div>
           </div>
@@ -154,7 +152,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Right Panel ─────────────────────────────────────────────── */}
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+      <div className="flex-1 bg-white rounded-2xl shadow-lg border rounded-2xl border border-gray-100 p-4">
         <h2 className="text-lg font-bold text-gray-900 mb-3">Profile Setting</h2>
 
         {/* Tabs */}
@@ -187,24 +185,24 @@ export default function ProfilePage() {
             {/* Form */}
             <div className="flex-1 flex flex-col gap-3">
               <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-700">Full Name</label>
-                  <input type="text" defaultValue="Mashok Khan" className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                <div className="flex-1 flex flex-col gap-1 ">
+                  <label className="text-xs font-semibold text-gray-700 ">Full Name</label>
+                  <input type="text" defaultValue="Mashok Khan" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Email address</label>
-                  <input type="email" defaultValue="hellopixiency@gmail.com" className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                  <input type="email" defaultValue="hellopixiency@gmail.com" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-700">Address</label>
-                <input type="text" defaultValue="127 Gobadia chittagong, Bangladesh" className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                <input type="text" defaultValue="127 Gobadia chittagong, Bangladesh" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-semibold text-gray-700">City</label>
+                  <label className="text-xs font-semibold  text-gray-700">City</label>
                   <select className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
                     <option>Chittagong</option>
                     <option>Dhaka</option>
@@ -227,7 +225,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Country</label>
-                  <select className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
+                  <select className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
                     <option>Bangladesh</option>
                     <option>India</option>
                     <option>USA</option>

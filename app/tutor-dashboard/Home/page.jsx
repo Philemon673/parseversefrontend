@@ -118,9 +118,9 @@ function ActionBtn({ icon: Icon, count, color = "text-gray-500" }) {
 
 function PostCard({ post }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-[#f2f3fa] rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Post Header */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3">
+      <div className=" bg-white flex items-center justify-between px-5 pt-4 pb-3">
         <div className="flex items-center gap-3">
           <Avatar initials="MK" className="w-10 h-10 text-sm" />
           <div>
@@ -148,7 +148,7 @@ function PostCard({ post }) {
       </div>
 
       {/* Two-column body */}
-      <div className="flex gap-0">
+      <div className="bg-white flex gap-0">
         {/* Left — post image + tags */}
         <div className="flex-1 px-5 pb-4 flex flex-col gap-3">
           <img

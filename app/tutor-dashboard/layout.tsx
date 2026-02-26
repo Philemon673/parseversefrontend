@@ -12,7 +12,6 @@ interface DashboardLayoutProps {
 // ── Add pages where Navbar should hide on scroll ──────────────────────────────
 const HIDE_ON_SCROLL_PAGES = [
   "/tutor-dashboard/chat",
-  "/tutor-dashboard/courses",
   "/tutor-dashboard/notification",
 ];
 
@@ -22,6 +21,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hideOnScroll = HIDE_ON_SCROLL_PAGES.includes(pathname);
+  
 
   useEffect(() => {
     // Reset to visible on every route change
@@ -53,23 +53,22 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <html lang="en">
-      <body>
+      <body className="">
         <div className="flex min-h-screen">
           <Sidebar />
           <div className="flex flex-1 flex-col">
 
             {/* Navbar — slides up when scrolling, reappears when stopped */}
             <div
-              className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${
-                navbarVisible
+              className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 -translate-y-full pointer-events-none"
-              }`}
+                }`}
             >
               <Navbar />
             </div>
 
-            <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <main className="flex-1 overflow-y-auto bg-[#f2f3fa] p-6">
               {children}
             </main>
 
