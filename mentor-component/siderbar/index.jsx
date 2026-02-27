@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/tutor-dashboard/Home" },
-  { icon: BookOpen, label: "Course", href: "/tutor-dashboard/courses" },
-  { icon: FolderOpen, label: "Profile", href: "/student-dashboard/profile" },
-  { icon: MessageCircle, label: "Chat", href: "/student-dashboard/chat" },
-  { icon: Bell, label: "Notifications", href: "/tutor-dashboard/notification", badge: 2 },
-  { icon: Settings, label: "Settings", href: "/tutor-dashboard/settings" },
+  { icon: Home, label: "Home", href: "/mentor-dashboard/Home" },
+  { icon: BookOpen, label: "Course", href: "/mentor-dashboard/courses" },
+  { icon: FolderOpen, label: "Profile", href: "/mentor-dashboard/profile" },
+  { icon: MessageCircle, label: "Chat", href: "/mentor-dashboard/chat" },
+  { icon: Bell, label: "Notifications", href: "/mentor-dashboard/notification", badge: 2 },
+  { icon: Settings, label: "Settings", href: "/mentor-dashboard/settings" },
 ];
 
 export default function Sidebar() {
