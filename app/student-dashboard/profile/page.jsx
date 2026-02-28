@@ -180,7 +180,7 @@ export default function StudentProfilePage() {
                     <div className="p-5 flex flex-col gap-3 border-t border-slate-100">
                         <div>
                             <h2 className="font-bold text-slate-800">Dhaka Ahmed</h2>
-                            <span className="inline-block mt-1.5 bg-teal-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
+                            <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
                                 STUDENT
                             </span>
                         </div>
@@ -210,7 +210,7 @@ export default function StudentProfilePage() {
 
                     <div className="border-b border-slate-100 pb-2">
                         <h1 className="text-2xl font-bold text-slate-800">Dhaka Ahmed</h1>
-                        <span className="inline-block mt-1.5 bg-teal-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
+                        <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
                             STUDENT
                         </span>
                     </div>

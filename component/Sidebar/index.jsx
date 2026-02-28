@@ -14,11 +14,11 @@ import {
 
 const navItems = [
   { icon: Home, label: "Home", href: "/tutor-dashboard/Home" },
-  { icon: BookOpen, label: "Course", href: "/tutor-dashboard/courses" },
+  { icon: BookOpen, label: "Course", href: "/student-dashboard/courses" },
   { icon: FolderOpen, label: "Profile", href: "/student-dashboard/profile" },
   { icon: MessageCircle, label: "Chat", href: "/student-dashboard/chat" },
   { icon: Bell, label: "Notifications", href: "/tutor-dashboard/notification", badge: 2 },
-  { icon: Settings, label: "Settings", href: "/tutor-dashboard/settings" },
+  { icon: Settings, label: "Settings", href: "/student-dashboard/request" },
 ];
 
 export default function Sidebar() {
