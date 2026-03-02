@@ -405,29 +405,7 @@ export default function RequestMentorshipPage() {
             {/* Estimated Cost Card */}
             <div className="mt-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
               <h4 className="font-bold text-slate-800 text-sm">Estimated Cost</h4>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Hourly Rate</span>
-                  <span className="font-semibold text-slate-700">
-                    ${suggestedPrice || HOURLY_RATE}/hr
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Duration</span>
-                  <span className="font-semibold text-slate-700">{selectedDuration}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-400">Session Date</span>
-                  <span className="font-semibold text-slate-700">
-                    {selectedDate?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                </div>
-                <div className="h-px bg-slate-100" />
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-700">Total</span>
-                  <span className="text-2xl font-bold text-slate-800">${total}</span>
-                </div>
-              </div>
+             
               <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
                 <Send className="w-4 h-4" />
                 Send Mentorship Request
