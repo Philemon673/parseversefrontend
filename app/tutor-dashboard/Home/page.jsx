@@ -1,5 +1,5 @@
 "use client";
-
+import SearchBar from "../../../component/SearchBar"
 import Post1 from "@/assets/post1.jpg";
 import Post2 from "@/assets/post2.jpg";
 import { useState } from "react";
@@ -75,6 +75,7 @@ const videoPost = {
     { id: 3, name: "Donald Williams", initials: "DW", text: "Shared this with my whole team.", time: "2h ago" },
   ],
 };
+
 
 // ── Sub Components ────────────────────────────────────────────────────────────
 
@@ -352,6 +353,7 @@ function VideoCard({ post }) {
 export default function PostsSection() {
   return (
     <div className="flex flex-col gap-5 w-full">
+     <SearchBar />
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
