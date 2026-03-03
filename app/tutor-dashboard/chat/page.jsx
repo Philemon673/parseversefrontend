@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile, Menu, X } from "lucide-react";
+import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile, Menu, X, } from "lucide-react";
 
 const activeMembers = [
   { initials: "MN", name: "Martin Nel", role: "VIP Member", isVip: true, color: "from-indigo-400 to-purple-500" },
