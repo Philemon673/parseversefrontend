@@ -12,7 +12,7 @@ interface DashboardLayoutProps {
 // ── Add pages where Navbar should hide on scroll ──────────────────────────────
 const HIDE_ON_SCROLL_PAGES = [
   "/tutor-dashboard/chat",
-  "/tutor-dashboard/notification",
+  
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

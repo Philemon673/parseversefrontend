@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile, Menu, X } from "lucide-react";
+import { Search, Heart, MessageCircle, Eye, Flame, Send, Paperclip, Smile, Menu, X, Camera, Phone } from "lucide-react";
 
 const initialMessages = [
   { id: 1, sender: "Mashok Khan", initials: "MK", color: "from-indigo-400 to-purple-500", text: "What are some recommended resources for learning TensorFlow?", time: "20 min ago", isOwn: false },
@@ -77,7 +77,11 @@ function ChatHeader() {
       </div>
 
       {/* ✅ FIXED: hamburger is now plain JSX inside the return, no nested return() */}
-      <div className="relative">
+      <div className="flex gap-2relative">
+        <div className="flex gap-2">
+         <Camera />
+         <Phone />
+        </div>
         <button
           onClick={() => setOpen(!open)}
           className="p-2 rounded-xl hover:bg-gray-100 transition text-gray-500"
