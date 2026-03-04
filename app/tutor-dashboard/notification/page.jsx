@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Bell, AtSign, RefreshCw, CheckCheck } from "lucide-react";
+import { Trash2, Bell, AtSign, RefreshCw, CheckCheck, Scroll } from "lucide-react";
+import ScrollToTop from "../../../screens/scroll";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
@@ -189,6 +190,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="p-2 bg-[#f2f3fa] min-h-screen">
+      <ScrollToTop />
       <div className="max-w-full-screen mx-auto flex flex-col gap-5">
 
         {/* Page Header */}

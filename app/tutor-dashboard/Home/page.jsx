@@ -12,7 +12,9 @@ import {
   Users,
   Send,
   Play,
+  Scroll,
 } from "lucide-react";
+import ScrollToTop from "../../../screens/scroll";
 
 const posts = [
     
@@ -354,6 +356,11 @@ export default function PostsSection() {
   return (
     <div className="flex flex-col gap-5 w-full">
      <SearchBar />
+     <>
+     
+     <ScrollToTop />
+     </>
+     
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}

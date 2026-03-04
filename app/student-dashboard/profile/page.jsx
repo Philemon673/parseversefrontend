@@ -1,5 +1,5 @@
 "use client";
-
+import Student from "../../../assets/student.jpg"
 import { useState } from "react";
 import {
     Mail,
@@ -168,8 +168,8 @@ export default function StudentProfilePage() {
                 <div className="bg-white rounded-3xl shadow-sm overflow-hidden flex flex-col w-64 flex-shrink-0">
                     <div className="relative h-72 bg-slate-200 overflow-hidden">
                         <img
-                            src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80"
-                            alt="Dhaka Ahmed"
+                            src={Student.src}
+                            alt="Lora Azuwesi"
                             className="w-full h-full object-cover object-top"
                         />
                         <button className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
@@ -179,7 +179,7 @@ export default function StudentProfilePage() {
 
                     <div className="p-5 flex flex-col gap-3 border-t border-slate-100">
                         <div>
-                            <h2 className="font-bold text-slate-800">Dhaka Ahmed</h2>
+                            <h2 className="font-bold text-slate-800">Lora Azuwesi</h2>
                             <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
                                 STUDENT
                             </span>
@@ -209,7 +209,7 @@ export default function StudentProfilePage() {
                 <div className="bg-white rounded-3xl shadow-sm flex-1 p-6 flex flex-col gap-4">
 
                     <div className="border-b border-slate-100 pb-2">
-                        <h1 className="text-2xl font-bold text-slate-800">Dhaka Ahmed</h1>
+                        <h1 className="text-2xl font-bold text-slate-800">Lora Azuwesi</h1>
                         <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
                             STUDENT
                         </span>
