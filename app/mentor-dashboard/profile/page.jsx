@@ -56,7 +56,7 @@ const achievements = [
 const roleItems = [
   {
     icon: <Users className="w-4 h-4 text-purple-500" />,
-    label: "Tutor",
+    label: "Mentor",
     danger: false,
   },
 ];
@@ -74,11 +74,11 @@ export default function ProfilePage() {
   return (
     <div className="flex gap-5 p-4 bg-[#f2f3fa] ">
       {/* ── Left Panel ─────────────────────────────────────────────── */}
-      <div className="w-[200px] flex-shrink-0 flex flex-col gap-4 shadow-lg rounded-2xl border border-gray-100 ">
+      <div className="w-[250px] flex-shrink-0 flex flex-col gap-4 shadow-lg rounded-2xl border border-gray-100 ">
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
 
           {/* Cover / Avatar */}
-          <div className="relative h-28 bg-gradient-to-br from-gray-200 to-gray-300">
+          <div className="relative h-30 bg-gradient-to-br from-gray-200 to-gray-300">
             <img src={Profile.src} alt="profile" className="w-full h-full object-cover" />
             <button className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow">
               <Camera className="w-3.5 h-3.5 text-gray-600" />
