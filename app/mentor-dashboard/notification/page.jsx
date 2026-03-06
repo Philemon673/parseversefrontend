@@ -81,7 +81,7 @@ const initialNotifications = [
   },
 ];
 
-const tabs = ["All", "Requests"];
+const tabs = ["All", "Requests",];
 
 // ── Sub Components ────────────────────────────────────────────────────────────
 
