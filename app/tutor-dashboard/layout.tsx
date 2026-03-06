@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
 
 // ── Add pages where Navbar should hide on scroll ──────────────────────────────
 const HIDE_ON_SCROLL_PAGES = [
-  "/tutor-dashboard/chat",
+  
   
 ];
 
@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     // Reset to visible on every route change
-    setNavbarVisible(true);
+    
 
     if (!hideOnScroll) return;
 

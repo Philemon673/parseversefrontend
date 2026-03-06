@@ -4,13 +4,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Bell } from "lucide-react";
 
-const tabs = ["For You", "Trending", "Top"];
+const tabs = [];
 
 const navItems = [
   { label: "Home", href: "/tutor-dashboard/Home" },
   { label: "Courses", href: "/tutor-dashboard/courses" },
   { label: "Profile", href: "/tutor-dashboard/profile" },
   { label: "Chat", href: "/tutor-dashboard/chat" },
+  {label: "Notification", href: "/tutor-dashboard/notification"}
 ];
 
 // Named export for helper function

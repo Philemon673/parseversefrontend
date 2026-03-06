@@ -2,8 +2,8 @@
 
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import Sidebar from "@/component/Sidebar";
-import Navbar from "@/component/Navbar";
+import Sidebar from "@/student-component/sidebar";
+import Navbar from "@/student-component/navbar";
 
 interface DashboardLayoutProps {
   children: ReactNode;

@@ -13,12 +13,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/mentor-dashboard/Home" },
+  { icon: Home, label: "Home", href: "/tutor-dashboard/Home" },
   { icon: BookOpen, label: "Course", href: "/mentor-dashboard/courses" },
   { icon: FolderOpen, label: "Profile", href: "/mentor-dashboard/profile" },
   { icon: MessageCircle, label: "Chat", href: "/mentor-dashboard/chat" },
   { icon: Bell, label: "Notifications", href: "/mentor-dashboard/notification", badge: 2 },
-  { icon: Settings, label: "Settings", href: "/mentor-dashboard/settings" },
 ];
 
 export default function Sidebar() {
@@ -65,7 +64,7 @@ export default function Sidebar() {
                 href={href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative ${
                   isActive
-                    ? "bg-white/20 text-white backdrop-blur-sm shadow"
+                    ? "bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white backdrop-blur-sm shadow"
                     : "text-purple-200 hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -86,7 +85,7 @@ export default function Sidebar() {
         <div className="mt-auto mx-2 rounded-2xl bg-gradient-to-br from-purple-600/80 to-indigo-700/80 backdrop-blur-sm border border-white/20 p-4 text-center shadow-xl">
           <p className="text-white font-semibold text-sm">Upgrade to PRO</p>
           <p className="text-purple-200 text-xs mb-3">for more resources.</p>
-          <button className="w-full py-2 rounded-xl bg-gradient-to-r from-purple-400 to-pink-400 text-white text-xs font-bold hover:opacity-90 transition shadow">
+          <button className="w-full py-2 rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white text-xs font-bold hover:opacity-90 transition shadow">
             Upgrade Now
           </button>
         </div>
