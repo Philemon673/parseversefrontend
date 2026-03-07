@@ -16,6 +16,7 @@ const navItems = [
   { icon: Home, label: "Home", href: "/student-dashboard/Home" },
   { icon: BookOpen, label: "Course", href: "/student-dashboard/courses" },
   { icon: FolderOpen, label: "Profile", href: "/student-dashboard/profile" },
+  { icon: MessageCircle, label: "Groups", href: "/student-dashboard/groups" },
   { icon: MessageCircle, label: "Chat", href: "/student-dashboard/chat" },
   { icon: Bell, label: "Notifications", href: "/student-dashboard/notification", badge: 2 },
   { icon: Settings, label: "Resquest", href: "/student-dashboard/request" },

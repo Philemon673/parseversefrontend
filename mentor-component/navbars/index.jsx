@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Bell } from "lucide-react";
 
-const tabs = ["For You", "Trending", "Top"];
+const tabs = [];
 
 const navItems = [
   { label: "Home", href: "/mentor-dashboard/Home" },

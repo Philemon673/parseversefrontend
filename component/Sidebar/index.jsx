@@ -17,6 +17,7 @@ const navItems = [
   { icon: BookOpen, label: "Course", href: "/tutor-dashboard/courses" },
   { icon: FolderOpen, label: "Profile", href: "/tutor-dashboard/profile" },
   { icon: MessageCircle, label: "Chat", href: "/tutor-dashboard/chat" },
+  { icon: MessageCircle, label: "Groups", href: "/tutor-dashboard/groups" },
   { icon: Bell, label: "Notifications", href: "/tutor-dashboard/notification", badge: 2 },
 ];
 
