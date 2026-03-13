@@ -51,7 +51,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow">
-            MN
+            MT
           </div>
           <div className="text-right">
             <div className="text-sm font-semibold text-gray-800">Martin Nel</div>
