@@ -42,7 +42,7 @@ export const posts = [
 
 export const videoPost = {
   id: 3,
-  author: "Bilal Ahmed",
+  author: "Mbella SMith",
   time: "3h ago",
   role: "Instructor",
   isVip: true,
@@ -51,7 +51,7 @@ export const videoPost = {
   videoDuration: "12:45",
   tags: ["JavaScript", "WebDev"],
   pinnedContent: {
-    author: "Bilal Ahmed",
+    author: "Mbella Smith",
     time: "3h ago",
     isVip: true,
     mentorCount: 2,
@@ -63,7 +63,7 @@ export const videoPost = {
   comments: 134,
   commentInput: true,
   initialComments: [
-    { id: 1, name: "Martin Nel", initials: "MN", text: "Best JS course I've seen!", time: "1h ago" },
+    { id: 1, name: "Mbella Smith", initials: "MS", text: "Best JS course I've seen!", time: "1h ago" },
     { id: 2, name: "Marissa Ray", initials: "MR", text: "async/await section was 🔥", time: "2h ago" },
     { id: 3, name: "Donald Williams", initials: "DW", text: "Shared this with my whole team.", time: "2h ago" },
   ],
