@@ -84,7 +84,7 @@ export default function ProfilePage() {
               <Camera className="w-3.5 h-3.5 text-gray-600" />
             </button>
             <div className="absolute bottom-2 left-3">
-              <p className="text-white font-bold text-sm drop-shadow">Mashok Khan</p>
+              <p className="text-white font-bold text-sm drop-shadow">Ekonde Roland</p>
               
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function ProfilePage() {
               <div className="flex gap-3">
                 <div className="flex-1 flex flex-col gap-1 ">
                   <label className="text-xs font-semibold text-gray-700 ">Full Name</label>
-                  <input type="text" defaultValue="Mashok Khan" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                  <input type="text" defaultValue="Ekonde Roland" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Email address</label>
