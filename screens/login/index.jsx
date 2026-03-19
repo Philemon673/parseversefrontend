@@ -180,7 +180,7 @@ function LoginForm() {
       </div>
 
       <Link
-        href="/mentor-dashboard/profile"
+        href="/tutor-dashboard/profile"
         className="block w-full text-center py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-lg shadow-purple-200"
       >
         Login

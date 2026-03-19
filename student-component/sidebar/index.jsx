@@ -26,8 +26,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   // Determine which nav item is active based on pathname
-  const getActiveLabel = () => {
-    const activeItem = navItems.find((item) => pathname.startsWith(item.href));
+ const getActiveLabel = () => {
+    //  sort by href length descending — most specific path matches first
+    const sorted = [...navItems].sort((a, b) => b.href.length - a.href.length);
+    const activeItem = sorted.find((item) => pathname.startsWith(item.href));
     return activeItem ? activeItem.label : "Home";
   };
 

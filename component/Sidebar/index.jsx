@@ -95,12 +95,12 @@ export default function Sidebar() {
         <div className="flex items-center gap-3 px-3 pt-5 border-t border-white/20 mt-5">
           <div className="relative">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-              RK
+              MN
             </div>
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
           </div>
           <div>
-            <div className="text-white text-sm font-semibold">Rajib Kumar</div>
+            <div className="text-white text-sm font-semibold">Martin Nel</div>
             <div className="text-green-400 text-xs">● Online</div>
           </div>
         </div>
