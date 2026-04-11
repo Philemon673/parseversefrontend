@@ -1,8 +1,9 @@
 "use client";
-
+import { useRouter } from 'next/navigation';
 import Post1 from "@/assets/post1.jpg";
 import Post2 from "@/assets/post2.jpg";
 import { useState } from "react";
+
 import {
   Heart, ThumbsDown, MessageCircle,
   Share2, MoreHorizontal, Users, Send, Play,
@@ -168,8 +169,10 @@ function CommentInput({ initialComments = [] }) {
 }
 
 function CardHeader({ post }) {
+  const router = useRouter();
   return (
-    <div className="bg-white flex items-center justify-between px-5 pt-4 pb-3">
+    <div onClick={() => router.push("/tutor-dashboard/profile")}
+    className="bg-white flex items-center justify-between px-5 pt-4 pb-3">
       <div className="flex items-center gap-3">
         <Avatar initials="MK" className="w-10 h-10 text-sm" />
         <div>
