@@ -97,7 +97,7 @@ function IconBtn({ icon: Icon, onClick, tooltip, variant = "ghost" }) {
   );
 }
 
-function DropdownMenu({ open, onClose }) {
+function DropdownMenu({ open, onClose, onSearchClick }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ function DropdownMenu({ open, onClose }) {
   if (!open) return null;
 
   const items = [
-    { icon: Search,    label: "Search",             color: "text-slate-500" },
+    { icon: Search,    label: "Search",             color: "text-slate-500", action: onSearchClick },
     { icon: BellOff,   label: "Mute Notifications", color: "text-slate-500" },
     { icon: ImageIcon, label: "Change Wallpaper",   color: "text-slate-500" },
     { icon: Archive,   label: "Archive Chat",       color: "text-slate-500" },
@@ -130,7 +130,7 @@ function DropdownMenu({ open, onClose }) {
         <div key={item.label}>
           {item.divider && <div className="h-px bg-slate-100 my-1" />}
           <button
-            onClick={onClose}
+            onClick={() => { item.action ? item.action() : onClose(); }}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-50 transition text-xs font-medium text-slate-700"
           >
             <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
@@ -142,41 +142,156 @@ function DropdownMenu({ open, onClose }) {
   );
 }
 
-function ChatHeader() {
+function ChatHeader({ messages }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [matchIndex, setMatchIndex] = useState(0);
+  const searchInputRef = useRef(null);
+
+  const matches = searchQuery.trim()
+    ? messages.filter((m) =>
+        m.text.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  function openSearch() {
+    setMenuOpen(false);
+    setSearchOpen(true);
+    setSearchQuery("");
+    setMatchIndex(0);
+    setTimeout(() => searchInputRef.current?.focus(), 50);
+  }
+
+  function closeSearch() {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setMatchIndex(0);
+  }
+
+  function handlePrev() {
+    setMatchIndex((i) => (i - 1 + matches.length) % matches.length);
+  }
+
+  function handleNext() {
+    setMatchIndex((i) => (i + 1) % matches.length);
+  }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white flex-shrink-0">
-      <div className="flex items-center gap-3">
-        <div className="relative">
-          <Avatar initials="MK" className="w-10 h-10 text-xs" color="from-indigo-400 to-purple-500" />
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <p className="font-semibold text-sm text-slate-900">Machine Learning Forum</p>
-            <VipBadge />
+    <div className="flex-shrink-0 border-b border-slate-100 bg-white">
+      {/* Main header row */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Avatar initials="MK" className="w-10 h-10 text-xs" color="from-indigo-400 to-purple-500" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500">members <strong className="text-slate-700">400</strong></span>
-            <span className="text-green-500">active <strong>6</strong></span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-sm text-slate-900">Machine Learning Forum</p>
+              <VipBadge />
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-500">members <strong className="text-slate-700">400</strong></span>
+              <span className="text-green-500">active <strong>6</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 relative">
+          <IconBtn icon={Phone} tooltip="Voice call" variant="ghost" />
+          <IconBtn icon={Video} tooltip="Video call" variant="solid" />
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500 hover:text-slate-700"
+            >
+              {menuOpen ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
+            </button>
+            <DropdownMenu
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              onSearchClick={openSearch}
+            />
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 relative">
-        <IconBtn icon={Phone} tooltip="Voice call" variant="ghost" />
-        <IconBtn icon={Video} tooltip="Video call" variant="solid" />
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen((prev) => !prev)}
-            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition text-slate-500 hover:text-slate-700"
-          >
-            {menuOpen ? <X className="w-4 h-4" /> : <MoreVertical className="w-4 h-4" />}
-          </button>
-          <DropdownMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      {/* Search bar — slides in below header */}
+      {searchOpen && (
+        <div className="px-4 pb-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setMatchIndex(0); }}
+              className="flex-1 text-sm bg-transparent focus:outline-none placeholder-slate-400"
+            />
+            {searchQuery && (
+              <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                {matches.length > 0 ? `${matchIndex + 1} / ${matches.length}` : "0 results"}
+              </span>
+            )}
+            <button onClick={closeSearch} className="text-slate-400 hover:text-slate-600 transition ml-1">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Results */}
+          {searchQuery && matches.length > 0 && (
+            <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-50">
+                <span className="text-[10px] text-slate-400 font-medium">{matches.length} message{matches.length !== 1 ? "s" : ""} found</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handlePrev}
+                    disabled={matches.length <= 1}
+                    className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 disabled:opacity-40 transition text-xs font-bold"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={matches.length <= 1}
+                    className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 disabled:opacity-40 transition text-xs font-bold"
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-40 overflow-y-auto divide-y divide-slate-50">
+                {matches.map((m, i) => {
+                  const idx = m.text.toLowerCase().indexOf(searchQuery.toLowerCase());
+                  const before = m.text.slice(0, idx);
+                  const match = m.text.slice(idx, idx + searchQuery.length);
+                  const after = m.text.slice(idx + searchQuery.length);
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setMatchIndex(i)}
+                      className={`w-full text-left px-3 py-2 transition ${i === matchIndex ? "bg-indigo-50" : "hover:bg-slate-50"}`}
+                    >
+                      <p className="text-[10px] font-semibold text-indigo-500 mb-0.5">{m.sender} · {m.time}</p>
+                      <p className="text-xs text-slate-700 leading-snug">
+                        {before}
+                        <mark className="bg-yellow-200 text-slate-900 rounded px-0.5">{match}</mark>
+                        {after}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {searchQuery && matches.length === 0 && (
+            <p className="text-xs text-slate-400 text-center py-2">No messages match "{searchQuery}"</p>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -293,7 +408,7 @@ function ChatPage() {
 
   return (
     <div className="flex flex-col h-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white">
-      <ChatHeader />
+      <ChatHeader messages={messages} />
       <MessageList messages={messages} />
       <ChatInput onSend={handleSend} />
     </div>
