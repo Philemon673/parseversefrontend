@@ -1,10 +1,11 @@
 "use client";
 
 import Profile from "@/assets/profile1.jpg";
-import { useState } from "react";
-import { Camera, ChevronRight, Trash2, HelpCircle, Users, UserPlus } from "lucide-react";
+import { useState, useRef } from "react";
+import { Camera, ChevronRight, Trash2, HelpCircle, Users, UserPlus, MessageCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-const tabs = ["Personal Details", "Details", "Resources","Schedules", "Payment"];
+const tabs = ["Personal Details", "Details", "Resources", "Schedules", "Payment"];
 
 function CrownIcon() {
   return (
@@ -70,22 +71,37 @@ const supportItems = [
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("Personal Details");
+  const [photoUrl, setPhotoUrl] = useState(Profile.src);
+  const fileInputRef = useRef(null);
+  const router = useRouter();
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setPhotoUrl(url);
+  };
 
   return (
-    <div className="flex gap-5 p-4 bg-[#f2f3fa] ">
+    <div className="flex gap-5 p-4 bg-[#f2f3fa]">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
+
       {/* ── Left Panel ─────────────────────────────────────────────── */}
-      <div className="w-[200px] flex-shrink-0 flex flex-col gap-4 shadow-lg rounded-2xl border border-gray-100 ">
+      <div className="w-[200px] flex-shrink-0 flex flex-col gap-4 shadow-lg rounded-2xl border border-gray-100">
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
 
-          {/* Cover / Avatar */}
+          {/* Cover / Avatar — no camera button */}
           <div className="relative h-28 bg-gradient-to-br from-gray-200 to-gray-300">
-            <img src={Profile.src} alt="profile" className="w-full h-full object-cover" />
-            <button className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow">
-              <Camera className="w-3.5 h-3.5 text-gray-600" />
-            </button>
+            <img src={photoUrl} alt="profile" className="w-full h-full object-cover" />
             <div className="absolute bottom-2 left-3">
               <p className="text-white font-bold text-sm drop-shadow">Mashok Khan</p>
-              
             </div>
           </div>
 
@@ -100,6 +116,17 @@ export default function ProfilePage() {
               <span className="text-gray-900 font-bold text-sm p-1 bg-green-200 rounded-full">05</span>
               <p className="text-gray-400 text-[10px]">Completed</p>
             </div>
+          </div>
+
+          {/* Message Button */}
+          <div className="px-3 py-2 border-b border-gray-100">
+            <button
+              onClick={() => router.push("/chat")}
+              className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition shadow-sm"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Message
+            </button>
           </div>
 
           {/* Achievements */}
@@ -148,11 +175,12 @@ export default function ProfilePage() {
               ))}
             </div>
           </div>
+
         </div>
       </div>
 
       {/* ── Right Panel ─────────────────────────────────────────────── */}
-      <div className="flex-1 bg-white rounded-2xl shadow-lg border rounded-2xl border border-gray-100 p-4">
+      <div className="flex-1 bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
         <h2 className="text-lg font-bold text-gray-900 mb-3">Profile Setting</h2>
 
         {/* Tabs */}
@@ -172,11 +200,15 @@ export default function ProfilePage() {
 
         {activeTab === "Personal Details" && (
           <div className="flex gap-4">
-            {/* Avatar upload */}
+            {/* Avatar upload — clickable, with camera icon */}
             <div className="flex-shrink-0">
-              <div className="relative w-24 h-28 rounded-xl overflow-hidden bg-gray-100">
-                <img src={Profile.src} alt="avatar" className="w-full h-full object-cover" />
-                <button className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-white/80 flex items-center justify-center shadow">
+              <div
+                className="relative w-24 h-28 rounded-xl overflow-hidden bg-gray-100 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                title="Click to change photo"
+              >
+                <img src={photoUrl} alt="avatar" className="w-full h-full object-cover" />
+                <button className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-white/80 flex items-center justify-center shadow pointer-events-none">
                   <Camera className="w-3 h-3 text-gray-600" />
                 </button>
               </div>
@@ -185,51 +217,68 @@ export default function ProfilePage() {
             {/* Form */}
             <div className="flex-1 flex flex-col gap-3">
               <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1 ">
-                  <label className="text-xs font-semibold text-gray-700 ">Full Name</label>
-                  <input type="text" defaultValue="Mashok Khan" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-700">Full Name</label>
+                  <input
+                    type="text"
+                    defaultValue="Mashok Khan"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Email address</label>
-                  <input type="email" defaultValue="hellopixiency@gmail.com" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                  <input
+                    type="email"
+                    defaultValue="hellopixiency@gmail.com"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-700">Address</label>
-                <input type="text" defaultValue="127 Gobadia chittagong, Bangladesh" className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                <input
+                  type="text"
+                  defaultValue="127 Gobadia chittagong, Bangladesh"
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                />
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-semibold  text-gray-700">City</label>
-                  <select className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
-                    <option>Chittagong</option>
-                    <option>Dhaka</option>
-                    <option>Sylhet</option>
-                  </select>
+                  <label className="text-xs font-semibold text-gray-700">City</label>
+                  <input
+                    type="text"
+                    defaultValue="Chittagong"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">State/Province</label>
-                  <select className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
-                    <option>Chittagong</option>
-                    <option>Dhaka</option>
-                  </select>
+                  <input
+                    type="text"
+                    defaultValue="Chittagong"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Zip Code</label>
-                  <input type="text" defaultValue="3200" className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent" />
+                  <input
+                    type="text"
+                    defaultValue="3200"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
                 <div className="flex-1 flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-700">Country</label>
-                  <select className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white">
-                    <option>Bangladesh</option>
-                    <option>India</option>
-                    <option>USA</option>
-                  </select>
+                  <input
+                    type="text"
+                    defaultValue="Bangladesh"
+                    className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                  />
                 </div>
               </div>
 
