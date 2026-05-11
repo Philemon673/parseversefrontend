@@ -175,7 +175,7 @@ function CommentInput({ initialComments = [] }) {
 
   return (
     <div className="flex flex-col gap-2 mt-2">
-      {/* ✅ newest at top, scroll down for older */}
+      {/*  newest at top, scroll down for older */}
       <CommentList comments={comments} />
 
       <div className="flex items-center gap-2">
@@ -274,7 +274,7 @@ function RightPanel({ post }) {
         </button>
       </div>
 
-      {/* ✅ passes initialComments per post */}
+      {/*  passes initialComments per post */}
       {post.commentInput && <CommentInput initialComments={post.initialComments || []} />}
     </div>
   );
