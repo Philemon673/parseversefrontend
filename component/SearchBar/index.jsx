@@ -27,8 +27,7 @@ const categories = [
   { label: "Courses", href: "/explore/courses" },
   { label: "Mentors", href: "/explore/mentors" },
   { label: "Tutorials", href: "/explore/tutorials" },
-  { label: "Live", href: "/explore/live" },
-  { label: "Shorts", href: "/mentor-dashboard/short" },
+  { label: "Live", href: "/mentor-dashboard/sessions" },
 ];
 
 const suggestions = [

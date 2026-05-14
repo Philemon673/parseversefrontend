@@ -12,6 +12,7 @@ import {
   Check,
   Filter,
 } from "lucide-react";
+import Link from "next/link";
 
 const trending = [
   { label: "Machine Learning Basics", views: "2.4M" },
@@ -21,7 +22,13 @@ const trending = [
   { label: "Next.js 15 Tutorial", views: "1.2M" },
 ];
 
-const categories = ["All", "Courses", "Mentors", "Tutorials", "Live", "Shorts"];
+const categories = [ 
+  {label:"All", href:"/student-dashboard/Home"}, 
+  {label:"Courses", href:"/student-dashboard/Home/courses"},
+  {label:"Mentors", href:"/student-dashboard/mentors"},
+  {label:"Tutorials", href:"/student-dashboard/tutorials"},
+  {label:"Live", href:"/student-dashboard/Home/live"}
+];
 
 const suggestions = [
   "react hooks tutorial",
@@ -107,22 +114,23 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
       {/* Category Pills */}
       {!hideCategories && (
         <div className="flex items-center gap-2 mb-5 flex-wrap justify-center">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={
-              "px-4 py-1.5 rounded-full text-sm font-medium transition " +
-              (activeCategory === cat
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200")
-            }
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-    )}
+          {categories.map((cat) => (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              onClick={() => setActiveCategory(cat.label)}
+              className={
+                "px-4 py-1.5 rounded-full text-sm font-medium transition " +
+                (activeCategory === cat.label
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+              }
+            >
+              {cat.label}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Search Wrapper */}
       <div ref={wrapperRef} className="w-full max-w-2xl relative">

@@ -1,5 +1,5 @@
 "use client";
-import SearchBar from "../../../component/SearchBar"
+import SearchBar from "../../../student-component/searchBar"
 import Post1 from "@/assets/post1.jpg";
 import Post2 from "@/assets/post2.jpg";
 import { useState } from "react";
@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Video,
-  Smile
+  Smile,
+  User
 } from "lucide-react";
 import ScrollToTop from "../../../screens/scroll";
 
@@ -325,40 +326,55 @@ function VideoCard({ post }) {
 function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
   const router = useRouter();
   return (
-    <div className="group relative overflow-hidden bg-white rounded-3xl p-1 shadow-xl shadow-indigo-100 border border-indigo-50 mb-6 animate-in fade-in slide-in-from-top duration-500">
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/5 via-purple-600/5 to-pink-600/5" />
-      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 md:p-6">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-              <Video className="w-7 h-7 text-white" />
+    <div className="relative group overflow-hidden bg-white rounded-[2rem] p-6 shadow-xl shadow-indigo-100/50 border border-indigo-50 mb-8 transition-all hover:shadow-2xl hover:shadow-indigo-200/50">
+      {/* Dynamic Background Mesh */}
+      <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-purple-500/5 rounded-full blur-2xl" />
+
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="flex items-start md:items-center gap-5">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-200 group-hover:scale-105 transition-transform duration-500">
+              <Video className="w-8 h-8 text-white" />
             </div>
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white"></span>
+              <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 border-2 border-white"></span>
             </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">Live Now</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Web Development</span>
+          
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white text-[9px] font-black uppercase tracking-[0.1em] shadow-lg shadow-red-100">
+                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live Now
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Engineering</span>
             </div>
-            <h3 className="text-base font-black text-slate-900 leading-tight">Introduction to React 19 — Live Deep Dive</h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">Instructor John Smiga is waiting for you</p>
+            <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight group-hover:text-indigo-600 transition-colors">
+              Introduction to React 19 — Live Deep Dive
+            </h3>
+            <div className="flex items-center gap-2 mt-2">
+               <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
+                  <User className="w-3 h-3 text-indigo-600" />
+               </div>
+               <p className="text-xs text-slate-500 font-bold">Hosted by <span className="text-indigo-600">John Smiga</span></p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-           <div className="hidden lg:flex items-center -space-x-2 mr-2">
-              {[1,2,3].map(i => (
-                 <img key={i} src={`https://i.pravatar.cc/100?u=${i+10}`} className="w-8 h-8 rounded-full border-2 border-white object-cover" alt="user" />
+
+        <div className="flex items-center justify-between lg:justify-end gap-6 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-50">
+           <div className="flex items-center -space-x-3">
+              {[1,2,3,4].map(i => (
+                 <img key={i} src={`https://i.pravatar.cc/100?u=${i+20}`} className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" alt="participant" />
               ))}
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">+15</div>
+              <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">+28</div>
            </div>
+           
            <button 
              onClick={() => router.push(`/student-dashboard/sessions/${sessionId}`)}
-             className="px-8 py-3.5 rounded-2xl bg-indigo-600 text-white font-black text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2"
+             className="px-10 py-4 rounded-2xl bg-indigo-600 text-white font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 group/btn"
            >
-             Join Session <ArrowRight className="w-4 h-4" />
+             Join Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
            </button>
         </div>
       </div>
