@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Star,
   Users,
@@ -23,18 +24,21 @@ import {
   UserCircle,
   MonitorPlay,
   Tag,
+  FileText,
 } from "lucide-react";
 import PaymentModal from "./PaymentModal";
 
 // ── Static Data ───────────────────────────────────────────────────────────────
 
 const course = {
+  id: 1,
   title: "Docker & Kubernetes\nThe Complete Guide",
   subtitle: "Build, deploy and scale production-ready applications with Docker & Kubernetes",
   level: "INTERMEDIATE",
   rating: 4.8,
   ratingCount: "14,239",
   students: "12,428",
+  type: "Video", // "Video" or "Hardcopy"
   instructor: {
     name: "John Smiga",
     role: "Senior Developer & Instructor",
@@ -167,22 +171,7 @@ const course = {
   totalDuration: "18h total",
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
 
-function Breadcrumb({ items }) {
-  return (
-    <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6">
-      {items.map((item, i) => (
-        <span key={item} className="flex items-center gap-1.5">
-          {i > 0 && <ChevronRight className="w-3 h-3 text-gray-300" />}
-          <span className={i === items.length - 1 ? "text-gray-800 font-semibold" : "hover:text-indigo-600 cursor-pointer transition-colors"}>
-            {item}
-          </span>
-        </span>
-      ))}
-    </nav>
-  );
-}
 
 function RatingStars({ rating }) {
   return (
@@ -214,12 +203,57 @@ function LevelBadge({ level }) {
   );
 }
 
-function VideoPreview() {
-  const [playing, setPlaying] = useState(false);
+function VideoPreview({ courseType, courseId, selectedLesson, selectedSection }) {
+  const router = useRouter();
+  const isHardcopy = courseType === "Hardcopy";
+  const PreviewIcon = isHardcopy ? FileText : Play;
+
+  const handlePreviewClick = () => {
+    const baseUrl = isHardcopy 
+      ? `/student-dashboard/coursedetails/courses/hardcopy`
+      : `/student-dashboard/coursedetails/courses/coursedetails`;
+    
+    let url = `${baseUrl}?courseId=${courseId}`;
+    
+    // Add lesson and section info if selected
+    if (selectedLesson && selectedSection) {
+      url += `&sectionId=${selectedSection.id}&lessonId=${selectedLesson.id}`;
+    }
+    
+    router.push(url);
+  };
+
+  // Determine what to show in preview
+  const hasSelectedLesson = selectedLesson && selectedSection;
+  const lessonType = selectedLesson?.type || 'video';
+  
+  const getTypeIcon = (type) => {
+    switch(type) {
+      case 'video': return Play;
+      case 'quiz': return FlaskConical;
+      case 'article': return BookOpen;
+      case 'lab': return Award;
+      default: return Play;
+    }
+  };
+
+  const getTypeBadge = (type) => {
+    const badges = {
+      video: { bg: 'bg-red-500', label: 'VIDEO' },
+      quiz: { bg: 'bg-amber-500', label: 'QUIZ' },
+      article: { bg: 'bg-emerald-500', label: 'ARTICLE' },
+      lab: { bg: 'bg-violet-500', label: 'LAB' },
+    };
+    return badges[type] || badges.video;
+  };
+
+  const LessonIcon = hasSelectedLesson ? getTypeIcon(lessonType) : PreviewIcon;
+  const badge = hasSelectedLesson ? getTypeBadge(lessonType) : null;
+
   return (
     <div
       className="relative w-full aspect-video rounded-2xl overflow-hidden cursor-pointer group bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl"
-      onClick={() => setPlaying(!playing)}
+      onClick={handlePreviewClick}
     >
       {/* Decorative background pattern */}
       <div className="absolute inset-0 opacity-20">
@@ -228,18 +262,73 @@ function VideoPreview() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-white/10" />
       </div>
 
-      {/* Docker/Kubernetes icon motif */}
+      {/* Course type icon motif */}
       <div className="absolute inset-0 flex items-center justify-center opacity-10">
-        <BookOpen className="w-40 h-40 text-white" />
+        {isHardcopy ? (
+          <FileText className="w-40 h-40 text-white" />
+        ) : (
+          <BookOpen className="w-40 h-40 text-white" />
+        )}
       </div>
 
-      {/* Play button */}
+      {/* Preview button */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
-          <Play className="w-6 h-6 text-indigo-600 fill-indigo-600 ml-1" />
+          <LessonIcon className={`w-6 h-6 text-indigo-600 ${lessonType === 'video' ? 'fill-indigo-600 ml-1' : ''}`} />
         </div>
-        <span className="text-white text-sm font-semibold tracking-wide opacity-90">Preview this course</span>
+        <div className="text-center px-4">
+          {hasSelectedLesson ? (
+            <>
+              <span className="text-white text-xs font-medium tracking-wide opacity-70 block mb-1">
+                {selectedSection.title}
+              </span>
+              <span className="text-white text-sm font-semibold tracking-wide opacity-90 block">
+                {selectedLesson.title}
+              </span>
+            </>
+          ) : (
+            <span className="text-white text-sm font-semibold tracking-wide opacity-90">
+              Preview this {isHardcopy ? 'document' : 'course'}
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Course/Lesson type badge */}
+      <div className="absolute top-4 right-4">
+        {hasSelectedLesson && badge ? (
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg text-white ${badge.bg}`}>
+            {badge.label}
+          </span>
+        ) : (
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
+            isHardcopy 
+              ? 'bg-emerald-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            {isHardcopy ? 'PDF DOCUMENT' : 'VIDEO COURSE'}
+          </span>
+        )}
+      </div>
+
+      {/* Lesson duration badge (if lesson selected) */}
+      {hasSelectedLesson && selectedLesson.duration && (
+        <div className="absolute bottom-4 right-4">
+          <span className="px-3 py-1.5 rounded-full text-xs font-bold shadow-lg bg-black/60 text-white backdrop-blur-sm flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {selectedLesson.duration}
+          </span>
+        </div>
+      )}
+
+      {/* Preview indicator (if lesson selected) */}
+      {hasSelectedLesson && selectedLesson.preview && (
+        <div className="absolute top-4 left-4">
+          <span className="px-3 py-1.5 rounded-full text-xs font-bold shadow-lg bg-emerald-500 text-white">
+            FREE PREVIEW
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -332,7 +421,7 @@ function WhatYoullLearn({ items }) {
   );
 }
 
-function CurriculumSection({ section, onToggle }) {
+function CurriculumSection({ section, onToggle, onLessonClick }) {
   const getTypeIcon = (type) => {
     switch(type) {
       case 'video': return Play;
@@ -388,6 +477,7 @@ function CurriculumSection({ section, onToggle }) {
               return (
                 <div
                   key={lesson.id}
+                  onClick={() => onLessonClick(section.id, lesson)}
                   className="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-slate-100 hover:border-indigo-200 hover:shadow-sm transition-all group cursor-pointer"
                 >
                   <div className="flex items-center gap-3 flex-1">
@@ -435,7 +525,7 @@ function CurriculumSection({ section, onToggle }) {
   );
 }
 
-function CourseContent({ sections, onToggle, totalSections, totalLessons, totalDuration }) {
+function CourseContent({ sections, onToggle, onLessonClick, totalSections, totalLessons, totalDuration }) {
   return (
     <section className="mb-10">
       <div className="flex items-center justify-between mb-5">
@@ -450,6 +540,7 @@ function CourseContent({ sections, onToggle, totalSections, totalLessons, totalD
             key={section.id}
             section={section}
             onToggle={() => onToggle(section.id)}
+            onLessonClick={onLessonClick}
           />
         ))}
       </div>
@@ -463,14 +554,23 @@ function CourseContent({ sections, onToggle, totalSections, totalLessons, totalD
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CourseDetailPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("Curriculum");
   const [sections, setSections] = useState(course.sections);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [selectedSection, setSelectedSection] = useState(null);
 
   const handleToggleSection = (id) => {
     setSections((prev) =>
       prev.map((s) => (s.id === id ? { ...s, expanded: !s.expanded } : s))
     );
+  };
+
+  const handleLessonClick = (sectionId, lesson) => {
+    const section = sections.find(s => s.id === sectionId);
+    setSelectedLesson(lesson);
+    setSelectedSection(section);
   };
 
   const handleEnrollClick = () => {
@@ -536,7 +636,12 @@ export default function CourseDetailPage() {
 
             {/* Mobile: Video Preview */}
             <div className="lg:hidden mb-6">
-              <VideoPreview />
+              <VideoPreview 
+                courseType={course.type} 
+                courseId={course.id}
+                selectedLesson={selectedLesson}
+                selectedSection={selectedSection}
+              />
             </div>
 
             {/* Tabs */}
@@ -551,6 +656,7 @@ export default function CourseDetailPage() {
                     <CourseContent
                       sections={sections}
                       onToggle={handleToggleSection}
+                      onLessonClick={handleLessonClick}
                       totalSections={course.totalSections}
                       totalLessons={course.totalLessons}
                       totalDuration={course.totalDuration}
@@ -651,7 +757,12 @@ export default function CourseDetailPage() {
           {/* ── Right Column ── */}
           <div className="w-full lg:w-96 flex-shrink-0">
             <div className="hidden lg:block mb-6">
-              <VideoPreview />
+              <VideoPreview 
+                courseType={course.type} 
+                courseId={course.id}
+                selectedLesson={selectedLesson}
+                selectedSection={selectedSection}
+              />
             </div>
             <PricingCard course={course} onEnrollClick={handleEnrollClick} />
           </div>

@@ -15,10 +15,7 @@ export default function PaymentModal({ isOpen, onClose, course }) {
   const [step, setStep] = useState(1); // 1: Payment Method, 2: Card Details, 3: Success
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [formData, setFormData] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
+    phoneNumber: '',
     email: '',
   });
 
@@ -85,8 +82,8 @@ export default function PaymentModal({ isOpen, onClose, course }) {
                 <h3 className="text-lg font-bold text-slate-900 mb-4">Select Payment Method</h3>
                 <div className="space-y-3">
                   {[
-                    { id: 'card', label: 'Credit/Debit Card', icon: CreditCard, desc: 'Visa, Mastercard, Amex' },
-                    { id: 'paypal', label: 'PayPal', icon: Globe, desc: 'Pay with your PayPal account' },
+                    { id: 'card', label: 'MTN Mobile Money', icon: CreditCard, desc: 'Pay with your MTN Mobile Money account' },
+                    { id: 'paypal', label: 'ORANGE Money', icon: Globe, desc: 'Pay with your ORANGE Money account' },
                   ].map((method) => (
                     <button
                       key={method.id}
@@ -136,67 +133,27 @@ export default function PaymentModal({ isOpen, onClose, course }) {
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder="your@email.com"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Card Number</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.cardNumber}
-                      onChange={(e) => setFormData({...formData, cardNumber: e.target.value})}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength="19"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Cardholder Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.cardName}
-                      onChange={(e) => setFormData({...formData, cardName: e.target.value})}
-                      placeholder="John Doe"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Expiry Date</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Phone Number</label>
+                    <div className="flex gap-2">
+                      <div className="w-20 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-700 font-semibold text-sm">
+                        +237
+                      </div>
                       <input
-                        type="text"
+                        type="tel"
                         required
-                        value={formData.expiryDate}
-                        onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
+                        value={formData.phoneNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 9) {
+                            setFormData({...formData, phoneNumber: value});
+                          }
+                        }}
+                        placeholder="6 XX XX XX XX"
+                        maxLength="9"
+                        className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">CVV</label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.cvv}
-                        onChange={(e) => setFormData({...formData, cvv: e.target.value})}
-                        placeholder="123"
-                        maxLength="4"
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition"
-                      />
-                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Enter 9-digit phone number</p>
                   </div>
                 </div>
               </div>

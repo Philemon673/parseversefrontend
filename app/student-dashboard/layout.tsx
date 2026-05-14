@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hideOnScroll = HIDE_ON_SCROLL_PAGES.includes(pathname);
-  
+  const isSessionPage = pathname.includes("/sessions/");
 
   useEffect(() => {
     // Reset to visible on every route change
@@ -53,20 +53,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      {!isSessionPage && <Sidebar />}
       <div className="flex flex-1 flex-col">
 
         {/* Navbar — slides up when scrolling, reappears when stopped */}
-        <div
-          className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-full pointer-events-none"
-            }`}
-        >
-          <Navbar />
-        </div>
+        {!isSessionPage && (
+          <div
+            className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 -translate-y-full pointer-events-none"
+              }`}
+          >
+            <Navbar />
+          </div>
+        )}
 
-        <main className={`flex-1 overflow-y-auto bg-[#f2f3fa] ${pathname === "/student-dashboard/searchresults" ? "p-0" : "p-6"}`}>
+        <main className={`flex-1 overflow-y-auto bg-[#f2f3fa] ${
+          isSessionPage ? "p-0" : 
+          pathname === "/student-dashboard/searchresults" ? "p-0" : "p-6"
+        }`}>
           {children}
         </main>
 

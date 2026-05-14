@@ -12,6 +12,7 @@ import {
   Check,
   Filter,
 } from "lucide-react";
+import Link from "next/link";
 
 const trending = [
   { label: "Machine Learning Basics", views: "2.4M" },
@@ -21,7 +22,14 @@ const trending = [
   { label: "Next.js 15 Tutorial", views: "1.2M" },
 ];
 
-const categories = ["All", "Courses", "Mentors", "Tutorials", "Live", "Shorts"];
+const categories = [
+  { label: "All", href: "/explore" },
+  { label: "Courses", href: "/explore/courses" },
+  { label: "Mentors", href: "/explore/mentors" },
+  { label: "Tutorials", href: "/explore/tutorials" },
+  { label: "Live", href: "/explore/live" },
+  { label: "Shorts", href: "/mentor-dashboard/short" },
+];
 
 const suggestions = [
   "react hooks tutorial",
@@ -108,8 +116,9 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
       {!hideCategories && (
         <div className="flex items-center gap-2 mb-5 flex-wrap justify-center">
         {categories.map((cat) => (
-          <button
-            key={cat}
+          <Link
+            key={cat.label}
+            href={cat.href}
             onClick={() => setActiveCategory(cat)}
             className={
               "px-4 py-1.5 rounded-full text-sm font-medium transition " +
@@ -118,8 +127,8 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200")
             }
           >
-            {cat}
-          </button>
+            {cat.label}
+          </Link>
         ))}
       </div>
     )}
