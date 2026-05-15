@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Bell, AtSign, RefreshCw, CheckCheck, Scroll } from "lucide-react";
+import { Trash2, Bell, AtSign, RefreshCw, CheckCheck, Scroll, Pin, Star, MessageSquare, Check, BookOpen, PlusSquare } from "lucide-react";
 import ScrollToTop from "../../../screens/scroll";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
@@ -15,7 +15,8 @@ const initialNotifications = [
     action: "pinned your post",
     detail: "Course Summary. Sirs teach Python for Beginners!",
     time: "1h ago",
-    icon: "📌",
+    icon: <Pin className="w-2.5 h-2.5 text-white fill-white" />,
+    badgeColor: "bg-blue-500",
     read: false,
     tab: "Mentions",
   },
@@ -27,7 +28,8 @@ const initialNotifications = [
     action: "gave you feedback",
     detail: "Gating. Carbon, added a new slide meter - op m",
     time: "1h ago",
-    icon: "⭐",
+    icon: <Star className="w-2.5 h-2.5 text-white fill-white" />,
+    badgeColor: "bg-amber-500",
     read: false,
     tab: "Updates",
   },
@@ -39,7 +41,8 @@ const initialNotifications = [
     action: "replied to your comment",
     detail: "Accassthsion; hotu: funspll® · Paligrtntenting 1h ago",
     time: "1h ago",
-    icon: "💬",
+    icon: <MessageSquare className="w-2.5 h-2.5 text-white fill-white" />,
+    badgeColor: "bg-emerald-500",
     read: false,
     tab: "Mentions",
   },
@@ -51,7 +54,8 @@ const initialNotifications = [
     action: "approved course enrollment",
     detail: "Caneed inbalcs am JavaScript Basics",
     time: "2h ago",
-    icon: "✅",
+    icon: <Check className="w-3 h-3 text-white stroke-[3]" />,
+    badgeColor: "bg-green-500",
     read: true,
     tab: "Updates",
   },
@@ -63,7 +67,8 @@ const initialNotifications = [
     action: "posted general resources!",
     detail: "Setting References you can find neat various stage chewit ar op 38 drgts.",
     time: "3h ago",
-    icon: "📚",
+    icon: <BookOpen className="w-2.5 h-2.5 text-white" />,
+    badgeColor: "bg-purple-500",
     read: true,
     tab: "Updates",
   },
@@ -75,7 +80,8 @@ const initialNotifications = [
     action: "added a new resource!",
     detail: "Han napnedia clarentionly iposren cove cove. wfient 8 mome. aJ. AGO races.",
     time: "4h ago",
-    icon: "🆕",
+    icon: <PlusSquare className="w-2.5 h-2.5 text-white" />,
+    badgeColor: "bg-pink-500",
     read: true,
     tab: "Updates",
   },
@@ -115,7 +121,9 @@ function NotificationCard(props) {
       {/* Avatar + icon badge */}
       <div className="relative flex-shrink-0">
         <Avatar initials={notif.initials} className="w-10 h-10 text-xs" color={notif.color} />
-        <span className="absolute -bottom-1 -right-1 text-sm">{notif.icon}</span>
+        <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${notif.badgeColor}`}>
+          {notif.icon}
+        </span>
       </div>
 
       {/* Content */}

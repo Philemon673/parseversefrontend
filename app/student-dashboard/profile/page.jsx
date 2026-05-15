@@ -1,6 +1,7 @@
 "use client";
 import Student from "../../../assets/student.jpg"
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
     Mail,
     MapPin,
@@ -17,6 +18,7 @@ import {
     Search,
     Save,
     X,
+    Smile,
 } from "lucide-react";
 
 const tabs = ["Overview", "Courses", "Achievements", "Certificates"];
@@ -131,6 +133,7 @@ function EditableField({ icon, value, onChange, editing, type = "text", placehol
 }
 
 export default function StudentProfilePage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState("Overview");
     const [editing, setEditing] = useState(false);
 
@@ -188,7 +191,7 @@ export default function StudentProfilePage() {
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800">203</span>
                                 <span className="text-xs text-slate-400">Enrolled Courses</span>
-                                <span className="text-base ml-auto">😊</span>
+                                <Award className="w-4 h-4 text-indigo-400 ml-auto" />
                                 <span className="font-bold text-slate-800">15</span>
                             </div>
                             <div className="flex items-center gap-3">
@@ -224,8 +227,8 @@ export default function StudentProfilePage() {
                         <div className="flex items-center gap-1.5">
                             <span className="font-bold text-slate-800 text-base">4</span>
                             <span className="text-slate-400 text-xs">4 Courses</span>
-                            <span className="text-base">😊</span>
-                            <CheckCircle className="w-4 h-4 text-blue-500" fill="#3b82f6" />
+                            <Award className="w-4 h-4 text-indigo-400 ml-1" />
+                            <CheckCircle className="w-4 h-4 text-blue-500 ml-1" fill="#3b82f6" />
                         </div>
                     </div>
 
@@ -434,7 +437,10 @@ export default function StudentProfilePage() {
                                     <div className="flex items-center gap-2">
                                         {course.id === 1 && <Search className="w-3.5 h-3.5 text-slate-400" />}
                                         <MoreHorizontal className="w-3.5 h-3.5 text-slate-400" />
-                                        <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition">
+                                        <button 
+                                            onClick={() => router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`)}
+                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
+                                        >
                                             Continue
                                             {course.id === 2 && <ChevronRight className="w-3 h-3" />}
                                         </button>

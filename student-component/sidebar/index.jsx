@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Bell,
   Settings,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -94,18 +95,14 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* User Profile */}
-        <div className="flex items-center gap-3 px-3 pt-5 border-t border-white/20 mt-5">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-              RK
+        {/* Logout */}
+        <div className="pt-4 mt-4 mx-2 pb-2">
+          <button className="w-full flex items-center px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500 hover:border-red-400 transition-all duration-300 text-sm font-semibold text-white/90 hover:text-white group shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors mr-3">
+              <LogOut className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
-          </div>
-          <div>
-            <div className="text-white text-sm font-semibold">Rajib Kumar</div>
-            <div className="text-green-400 text-xs">● Online</div>
-          </div>
+            <span className="tracking-wide">Sign Out</span>
+          </button>
         </div>
       </div>
     </aside>

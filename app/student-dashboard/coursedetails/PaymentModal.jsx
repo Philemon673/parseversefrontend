@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   X,
   CreditCard,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export default function PaymentModal({ isOpen, onClose, course }) {
+  const router = useRouter();
   const [step, setStep] = useState(1); // 1: Payment Method, 2: Card Details, 3: Success
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [formData, setFormData] = useState({
@@ -21,12 +23,17 @@ export default function PaymentModal({ isOpen, onClose, course }) {
 
   if (!isOpen) return null;
 
+  const handleStartLearning = () => {
+    onClose();
+    setStep(1);
+    router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setStep(3);
     setTimeout(() => {
-      onClose();
-      setStep(1);
+      handleStartLearning();
     }, 3000);
   };
 
@@ -221,7 +228,7 @@ export default function PaymentModal({ isOpen, onClose, course }) {
               <div className="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl p-6 max-w-md mx-auto">
                 <p className="text-sm text-slate-600 mb-4">A confirmation email has been sent to your inbox with course access details.</p>
                 <button
-                  onClick={onClose}
+                  onClick={handleStartLearning}
                   className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition"
                 >
                   Start Learning Now

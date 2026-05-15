@@ -13,6 +13,7 @@ import {
   Filter,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const trending = [
   { label: "Machine Learning Basics", views: "2.4M" },
@@ -25,8 +26,7 @@ const trending = [
 const categories = [ 
   {label:"All", href:"/student-dashboard/Home"}, 
   {label:"Courses", href:"/student-dashboard/Home/courses"},
-  {label:"Mentors", href:"/student-dashboard/mentors"},
-  {label:"Tutorials", href:"/student-dashboard/tutorials"},
+  {label:"Resources", href:"/student-dashboard/Home/Resources"},
   {label:"Live", href:"/student-dashboard/Home/live"}
 ];
 
@@ -52,6 +52,7 @@ const filterOptions = {
 };
 
 export default function SearchBar({ onSearch, hideCategories = false }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -101,7 +102,12 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
     }
     setQuery(term);
     setFocused(false);
-    onSearch?.(term);
+    
+    if (onSearch) {
+      onSearch(term);
+    } else {
+      router.push(`/student-dashboard/searchresults?q=${encodeURIComponent(term)}`);
+    }
   }
 
   function removeRecent(term) {

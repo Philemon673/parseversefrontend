@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, ChevronDown, MoreVertical, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
@@ -104,6 +105,8 @@ function ProgressBar({ value }) {
 // ── Course Card ───────────────────────────────────────────────────────────────
 
 function CourseCard({ course }) {
+  const router = useRouter();
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col">
 
@@ -206,7 +209,10 @@ function CourseCard({ course }) {
               Certificate
             </button>
           ) : (
-            <button className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition">
+            <button 
+              onClick={() => router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`)}
+              className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
+            >
               Continue
             </button>
           )}
@@ -231,7 +237,7 @@ export default function CoursesPage() {
 
   return (
     <div
-      className="min-h-screen p-6 flex flex-col gap-6"
+      className="min-h-screen p-6 flex flex-col gap-6 r"
       
     >
 

@@ -13,14 +13,13 @@ import {
   Users,
   Send,
   Play,
-  Scroll,
-  Clock,
-  CheckCircle2,
+ X,
   ArrowRight,
   Video,
   Smile,
   User
 } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 import ScrollToTop from "../../../screens/scroll";
 
 const posts = [
@@ -149,18 +148,20 @@ function CommentList({ comments }) {
 function CommentInput({ initialComments = [] }) {
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState(initialComments);
+  const [showEmoji, setShowEmoji] = useState(false);
 
   function handleSend() {
     if (!comment.trim()) return;
     const newComment = {
       id: Date.now(),
       name: "You",
-      initials: "RK",
+      initials: "Y",
       text: comment.trim(),
       time: "just now",
     };
     setComments((prev) => [newComment, ...prev]);
     setComment("");
+    setShowEmoji(false);
   }
 
   function handleKeyDown(e) {
@@ -170,10 +171,19 @@ function CommentInput({ initialComments = [] }) {
     }
   }
 
+  const onEmojiClick = (emojiObject) => {
+    setComment((prev) => prev + emojiObject.emoji);
+  };
+
   return (
-    <div className="flex flex-col gap-2 mt-2">
+    <div className="flex flex-col gap-2 mt-2 relative">
       <CommentList comments={comments} />
-      <div className="flex items-center gap-2">
+      {showEmoji && (
+        <div className="absolute bottom-12 right-0 z-50">
+          <EmojiPicker onEmojiClick={onEmojiClick} theme="light" />
+        </div>
+      )}
+      <div className="flex items-center gap-2 relative">
         <input
           type="text"
           placeholder="Add a comment..."
@@ -182,7 +192,12 @@ function CommentInput({ initialComments = [] }) {
           onKeyDown={handleKeyDown}
           className="flex-1 text-sm px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-300 placeholder-gray-400"
         />
-        <button className="text-xl"><Smile /></button>
+        <button 
+          onClick={() => setShowEmoji(!showEmoji)}
+          className="p-1.5 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0"
+        >
+          <Smile className="w-5 h-5 text-slate-400 hover:text-indigo-600 transition-colors" />
+        </button>
         <button
           onClick={handleSend}
           className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center hover:bg-indigo-700 transition flex-shrink-0"
@@ -325,122 +340,87 @@ function VideoCard({ post }) {
 
 function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
   const router = useRouter();
+  const [isVisible, setIsVisible] = useState(true);
+
+  if (!isVisible) return null;
+
   return (
     <div className="relative group overflow-hidden bg-white rounded-[2rem] p-6 shadow-xl shadow-indigo-100/50 border border-indigo-50 mb-8 transition-all hover:shadow-2xl hover:shadow-indigo-200/50">
+      {/* Close Button */}
+      <button
+        onClick={() => setIsVisible(false)}
+        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors z-20 text-slate-400"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
       {/* Dynamic Background Mesh */}
       <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
       <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-purple-500/5 rounded-full blur-2xl" />
 
-      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6 pr-8">
         <div className="flex items-start md:items-center gap-5">
           <div className="relative flex-shrink-0">
             <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-200 group-hover:scale-105 transition-transform duration-500">
               <Video className="w-8 h-8 text-white" />
             </div>
             <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 border-2 border-white"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 border-2 border-white" />
             </span>
           </div>
-          
+
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white text-[9px] font-black uppercase tracking-[0.1em] shadow-lg shadow-red-100">
                 <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live Now
               </span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">Engineering</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                Engineering
+              </span>
             </div>
             <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight group-hover:text-indigo-600 transition-colors">
               Introduction to React 19 — Live Deep Dive
             </h3>
             <div className="flex items-center gap-2 mt-2">
-               <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
-                  <User className="w-3 h-3 text-indigo-600" />
-               </div>
-               <p className="text-xs text-slate-500 font-bold">Hosted by <span className="text-indigo-600">John Smiga</span></p>
+              <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
+                <User className="w-3 h-3 text-indigo-600" />
+              </div>
+              <p className="text-xs text-slate-500 font-bold">
+                Hosted by <span className="text-indigo-600">John Smiga</span>
+              </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between lg:justify-end gap-6 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-50">
-           <div className="flex items-center -space-x-3">
-              {[1,2,3,4].map(i => (
-                 <img key={i} src={`https://i.pravatar.cc/100?u=${i+20}`} className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" alt="participant" />
-              ))}
-              <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">+28</div>
-           </div>
-           
-           <button 
-             onClick={() => router.push(`/student-dashboard/sessions/${sessionId}`)}
-             className="px-10 py-4 rounded-2xl bg-indigo-600 text-white font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 group/btn"
-           >
-             Join Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-           </button>
+          <div className="flex items-center -space-x-3">
+            {[1, 2, 3, 4].map((i) => (
+              <img
+                key={i}
+                src={`https://i.pravatar.cc/100?u=${i + 20}`}
+                className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm"
+                alt="participant"
+              />
+            ))}
+            <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
+              +28
+            </div>
+          </div>
+
+          <button
+            onClick={() => router.push(`/student-dashboard/sessions/${sessionId}`)}
+            className="px-10 py-4 rounded-2xl bg-indigo-600 text-white font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 group/btn"
+          >
+            Join Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function DashboardHeader() {
-  const activeCourses = [
-    { id: 1, title: "React 19 Complete Guide", progress: 65, color: "from-blue-500 to-indigo-600" },
-    { id: 2, title: "System Design Masterclass", progress: 32, color: "from-purple-500 to-pink-600" },
-  ];
-  return (
-    <div className="flex flex-col gap-6 mb-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900">Welcome back, Rajib! 👋</h1>
-          <p className="text-slate-500 text-sm font-medium">You've completed 85% of your weekly goal.</p>
-        </div>
-        <div className="flex items-center gap-4">
-           <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100">
-             <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-               <Clock className="w-5 h-5 text-orange-500" />
-             </div>
-             <div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Time Learned</p>
-               <p className="text-sm font-black text-slate-900">12.4 hrs</p>
-             </div>
-           </div>
-           <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100">
-             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-             </div>
-             <div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Completed</p>
-               <p className="text-sm font-black text-slate-900">24 Lessons</p>
-             </div>
-           </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {activeCourses.map((course) => (
-          <div key={course.id} className={`relative overflow-hidden rounded-3xl p-6 text-white bg-gradient-to-br ${course.color} shadow-xl shadow-indigo-100`}>
-             <div className="relative z-10">
-               <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Continue Learning</span>
-               <h3 className="text-lg font-black mt-1 mb-4">{course.title}</h3>
-               <div className="space-y-2 mb-4">
-                 <div className="flex items-center justify-between text-xs font-bold">
-                   <span>{course.progress}% Complete</span>
-                 </div>
-                 <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
-                   <div className="h-full bg-white rounded-full" style={{ width: `${course.progress}%` }} />
-                 </div>
-               </div>
-               <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all text-xs font-bold">
-                 Resume Lesson <ArrowRight className="w-3.5 h-3.5" />
-               </button>
-             </div>
-             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
-             <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-black/5 rounded-full" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+
 
 export default function PostsSection() {
   return (
@@ -448,13 +428,10 @@ export default function PostsSection() {
       <SearchBar />
       <div className="flex flex-col gap-6">
         <LiveSessionAlert />
-        <DashboardHeader />
+        
       </div>
       <ScrollToTop />
-      <div className="flex items-center justify-between mt-4">
-        <h2 className="text-xl font-black text-slate-900">Recent Updates</h2>
-        <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">View All</button>
-      </div>
+      
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}

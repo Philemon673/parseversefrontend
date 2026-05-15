@@ -256,10 +256,27 @@ export function SortDropdown() {
 // ── Content Card ──────────────────────────────────────────────────────────────
 
 function ContentCard({ card }) {
+  const router = useRouter();
   const [saved, setSaved] = useState(false);
 
+  const handleClick = () => {
+    if (card.paid) {
+      router.push("/student-dashboard/coursedetails");
+    } else {
+      const baseUrl = card.type === "video"
+        ? "/student-dashboard/coursedetails/courses/coursedetails"
+        : "/student-dashboard/coursedetails/courses/hardcopy";
+      router.push(`${baseUrl}?courseId=${card.id}`);
+    }
+  };
+
+
+
   return (
-    <div className="bg-[#f2f3fa] rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full transition-all hover:shadow-md">
+    <div 
+      onClick={handleClick}
+      className="bg-[#f2f3fa] rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full transition-all hover:shadow-md cursor-pointer"
+    >
 
       {/* Card Header */}
       <div className="bg-white flex items-center justify-between px-5 pt-4 pb-3">
@@ -444,25 +461,10 @@ function SearchResultsContent() {
     <div className="flex flex-col w-full min-h-screen">
       {/* Top Search Bar Area */}
       <div className="w-full bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-[1600px] mx-auto md:px-12 py-6 flex flex-col items-center gap-1">
-
-          {/* Category Tabs Above Search Bar */}
-          <CategoryTabs
-            activeCategory={activeCategory}
-            onChange={setActiveCategory}
-            className="flex justify-center flex-wrap gap-3"
-          />
-
-          {/* Search Bar */}
-          <div className="w-full flex justify-center">
-            <div className="w-full max-w-3xl">
-              <SearchBar
-                onSearch={handleSearch}
-                hideCategories={true}
-              />
-            </div>
+        <div className="w-full flex justify-center py-2">
+          <div className="w-full max-w-3xl">
+            <SearchBar onSearch={handleSearch} />
           </div>
-
         </div>
       </div>
 
