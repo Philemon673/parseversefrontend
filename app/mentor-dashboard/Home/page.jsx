@@ -1,6 +1,6 @@
 "use client";
 
-import SearchBar from "../../../component/SearchBar";
+import SearchBar from "../../../mentor-component/searchbar";
 import ScrollToTop from "../../../screens/scroll";
 import { PostCard, VideoCard, posts, videoPost } from "../post/page";
 
