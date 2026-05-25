@@ -1,87 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2, Bell, AtSign, RefreshCw, CheckCheck, Scroll } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, AtSign, RefreshCw, CheckCheck } from "lucide-react";
 import ScrollToTop from "../../../screens/scroll";
+import { api } from "../../../lib/api";
+import { useAuth } from "../../../lib/auth-context";
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
+const tabs = ["All", "Unread", "System"];
 
-const initialNotifications = [
-  {
-    id: 1,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "pinned your post",
-    detail: "Course Summary. Sirs teach Python for Beginners!",
-    time: "1h ago",
-    icon: "📌",
-    read: false,
-    tab: "Mentions",
-  },
-  {
-    id: 2,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "gave you feedback",
-    detail: "Gating. Carbon, added a new slide meter - op m",
-    time: "1h ago",
-    icon: "⭐",
-    read: false,
-    tab: "Updates",
-  },
-  {
-    id: 3,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "replied to your comment",
-    detail: "Accassthsion; hotu: funspll® · Paligrtntenting 1h ago",
-    time: "1h ago",
-    icon: "💬",
-    read: false,
-    tab: "Mentions",
-  },
-  {
-    id: 4,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "approved course enrollment",
-    detail: "Caneed inbalcs am JavaScript Basics",
-    time: "2h ago",
-    icon: "✅",
-    read: true,
-    tab: "Updates",
-  },
-  {
-    id: 5,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "posted general resources!",
-    detail: "Setting References you can find neat various stage chewit ar op 38 drgts.",
-    time: "3h ago",
-    icon: "📚",
-    read: true,
-    tab: "Updates",
-  },
-  {
-    id: 6,
-    author: "Mashok Khan",
-    initials: "MK",
-    color: "from-indigo-400 to-purple-500",
-    action: "added a new resource!",
-    detail: "Han napnedia clarentionly iposren cove cove. wfient 8 mome. aJ. AGO races.",
-    time: "4h ago",
-    icon: "🆕",
-    read: true,
-    tab: "Updates",
-  },
-];
+// ── Helper ────────────────────────────────────────────────────────────────────
+function formatTime(dateString) {
+  if (!dateString) return "Just now";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-const tabs = ["All", "Requests"];
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
+}
 
 // ── Sub Components ────────────────────────────────────────────────────────────
 
@@ -97,39 +38,40 @@ function Avatar(props) {
 
 function TabIcon(props) {
   if (props.tab === "All") return <Bell className="w-3.5 h-3.5" />;
-  if (props.tab === "Mentions") return <AtSign className="w-3.5 h-3.5" />;
+  if (props.tab === "Unread") return <AtSign className="w-3.5 h-3.5" />;
   return <RefreshCw className="w-3.5 h-3.5" />;
 }
 
 // ── Notification Card ─────────────────────────────────────────────────────────
 
-function NotificationCard(props) {
-  const notif = props.notif;
-  const onDelete = props.onDelete;
-  const onMarkRead = props.onMarkRead;
-
+function NotificationCard({ notif, onMarkRead }) {
   return (
     <div className={"flex items-start gap-3 p-4 rounded-2xl border transition group " +
-      (notif.read ? "bg-white border-gray-100" : "bg-indigo-50/60 border-indigo-100")
+      (notif.isRead ? "bg-white border-gray-100" : "bg-indigo-50/60 border-indigo-100")
     }>
       {/* Avatar + icon badge */}
       <div className="relative flex-shrink-0">
-        <Avatar initials={notif.initials} className="w-10 h-10 text-xs" color={notif.color} />
-        <span className="absolute -bottom-1 -right-1 text-sm">{notif.icon}</span>
+        <Avatar
+          initials={notif.type === "SYSTEM" ? "SYS" : "PV"}
+          className="w-10 h-10 text-xs"
+          color="from-indigo-400 to-purple-500"
+        />
+        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm bg-blue-500">
+          <Bell className="w-2.5 h-2.5 text-white" />
+        </span>
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-800 leading-snug">
-          <span className="font-semibold">{notif.author}</span>{" "}
-          <span className="text-gray-600">{notif.action}</span>
+        <p className="text-sm text-gray-800 leading-snug font-semibold">
+          {notif.title}
         </p>
         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
-          {notif.detail}
+          {notif.message}
         </p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-gray-400">{notif.time}</span>
-          {!notif.read && (
+          <span className="text-[10px] text-gray-400">{formatTime(notif.createdAt)}</span>
+          {!notif.isRead && (
             <button
               onClick={() => onMarkRead(notif.id)}
               className="text-[10px] text-indigo-500 hover:underline font-medium"
@@ -140,18 +82,11 @@ function NotificationCard(props) {
         </div>
       </div>
 
-      {/* Right — unread dot + delete */}
-      <div className="flex flex-col items-center gap-2 flex-shrink-0">
-        {!notif.read && (
-          <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1" />
+      {/* Unread dot */}
+      <div className="flex-shrink-0 mt-1">
+        {!notif.isRead && (
+          <span className="w-2 h-2 rounded-full bg-indigo-500 block" />
         )}
-        <button
-          onClick={() => onDelete(notif.id)}
-          className="opacity-0 group-hover:opacity-100 transition p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500"
-          title="Delete notification"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
@@ -160,32 +95,58 @@ function NotificationCard(props) {
 // ── Main Notifications Page ───────────────────────────────────────────────────
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadNotifications();
+    }
+  }, [user]);
+
+  async function loadNotifications() {
+    try {
+      setLoading(true);
+      const data = await api.get(`/notifications/user/${user.id}`);
+      setNotifications(data);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filtered = notifications.filter((n) => {
     if (activeTab === "All") return true;
-    return n.tab === activeTab;
+    if (activeTab === "Unread") return !n.isRead;
+    if (activeTab === "System") return n.type === "SYSTEM";
+    return true;
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  function handleDelete(id) {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  async function handleMarkRead(id) {
+    try {
+      await api.get(`/notifications/read/${id}`);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark as read", err);
+    }
   }
 
-  function handleMarkRead(id) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  }
-
-  function handleMarkAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
-
-  function handleDeleteAll() {
-    setNotifications([]);
+  async function handleMarkAllRead() {
+    try {
+      await Promise.all(
+        notifications.filter((n) => !n.isRead).map((n) => api.get(`/notifications/read/${n.id}`))
+      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Failed to mark all as read", err);
+    }
   }
 
   return (
@@ -236,20 +197,17 @@ export default function NotificationsPage() {
                 <CheckCheck className="w-3.5 h-3.5" />
                 Mark All as Read
               </button>
-              <span className="text-gray-200">|</span>
-              <button
-                onClick={handleDeleteAll}
-                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-medium transition"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear All
-              </button>
             </div>
           </div>
 
           {/* Notification List */}
           <div className="p-4 flex flex-col gap-3">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-300">
+                <RefreshCw className="w-6 h-6 mb-3 animate-spin" />
+                <p className="text-sm font-medium">Loading...</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-300">
                 <Bell className="w-10 h-10 mb-3" />
                 <p className="text-sm font-medium">No notifications</p>
@@ -259,7 +217,6 @@ export default function NotificationsPage() {
                 <NotificationCard
                   key={notif.id}
                   notif={notif}
-                  onDelete={handleDelete}
                   onMarkRead={handleMarkRead}
                 />
               ))

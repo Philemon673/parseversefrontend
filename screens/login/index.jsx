@@ -127,9 +127,33 @@ export default function ParseVersePage() {
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = require("@/lib/auth-context").useAuth();
+  const router = require("next/navigation").useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      const user = await login(email, password);
+      if (user.role === "STUDENT") router.push("/student-dashboard/Home");
+      else if (user.role === "MENTOR") router.push("/mentor-dashboard/Home");
+      else if (user.role === "TUTOR") router.push("/tutor-dashboard/Home");
+      else if (user.role === "INSTRUCTOR") router.push("/dashboard");
+      else router.push("/");
+    } catch (err) {
+      setError(err.message || "Invalid email or password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <>
+    <form onSubmit={handleSubmit}>
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Welcome Back!</h2>
         <p className="text-gray-500 text-sm mt-1">
@@ -137,21 +161,29 @@ function LoginForm() {
         </p>
       </div>
 
-      <div className="space-y-1.5">
+      {error && <div className="mt-3 p-3 bg-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
+
+      <div className="space-y-1.5 mt-4">
         <label className="text-sm font-semibold text-gray-800">Email Address</label>
         <input
           type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
+          required
           className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition placeholder-gray-400"
         />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 mt-4">
         <label className="text-sm font-semibold text-gray-800">Password</label>
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
+            required
             className="w-full px-4 py-3 pr-11 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition placeholder-gray-400"
           />
           <button
@@ -164,7 +196,7 @@ function LoginForm() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-4 mb-6">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -174,18 +206,19 @@ function LoginForm() {
           />
           <span className="text-sm text-gray-700">Remember me</span>
         </label>
-        <button className="text-sm text-gray-500 hover:text-purple-600 transition">
+        <button type="button" className="text-sm text-gray-500 hover:text-purple-600 transition">
           Forgot Password?
         </button>
       </div>
 
-      <Link
-        href="/tutor-dashboard/Home"
-        className="block w-full text-center py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-lg shadow-purple-200"
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="block w-full text-center py-3.5 rounded-xl text-white font-semibold text-sm bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 hover:opacity-90 transition shadow-lg shadow-purple-200 disabled:opacity-50"
       >
-        Login
-      </Link>
-    </>
+        {isLoading ? "Logging in..." : "Login"}
+      </button>
+    </form>
   );
 }
 

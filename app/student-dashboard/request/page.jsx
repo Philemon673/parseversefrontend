@@ -154,6 +154,8 @@ function Calendar({ selectedDate, onSelect }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+import { api } from "@/lib/api";
+
 export default function RequestMentorshipPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [selectedField, setSelectedField] = useState("");
@@ -165,6 +167,10 @@ export default function RequestMentorshipPage() {
   const [selectedDuration, setSelectedDuration] = useState("2 Hours");
   const [suggestedPrice, setSuggestedPrice] = useState("");
   const [selectedRole, setSelectedRole] = useState("mentor");
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
     if (!selectedField) setActiveStep(1);
@@ -186,6 +192,42 @@ export default function RequestMentorshipPage() {
         day: "numeric",
       })
     : "No date selected";
+
+  const handleSendRequest = async () => {
+    if (!selectedField || !topic || !selectedDate) {
+      setSubmitError("Please fill out the field, topic, and select a date.");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitError("");
+    setSubmitSuccess(false);
+
+    try {
+      await api.post("/mentorship", {
+        field: selectedField,
+        topic: topic,
+        level: selectedLevel.toUpperCase(),
+        sessionType: selectedSession.toUpperCase(),
+        sessionDate: selectedDate.toISOString(),
+        duration: selectedDuration,
+        suggestedPrice: suggestedPrice ? parseFloat(suggestedPrice) : undefined,
+        notes: notes,
+        role: selectedRole.toUpperCase(),
+      });
+      setSubmitSuccess(true);
+      // Reset form
+      setSelectedField("");
+      setTopic("");
+      setSelectedDate(null);
+      setNotes("");
+      setSuggestedPrice("");
+    } catch (err) {
+      setSubmitError(err.message || "Failed to send request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-2 flex flex-col gap-5">
@@ -375,9 +417,39 @@ export default function RequestMentorshipPage() {
             <div className="mt-auto bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3">
               <h4 className="font-bold text-slate-800 text-sm">Please review your request details before sending</h4>
              
-              <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
-                <Send className="w-4 h-4" />
-                Send {selectedRole === "mentor" ? "Mentorship" : "Tutoring"} Request
+              {submitError && <div className="p-3 bg-red-100 text-red-700 rounded-xl text-sm">{submitError}</div>}
+              {submitSuccess && <div className="p-3 bg-green-100 text-green-700 rounded-xl text-sm font-medium flex items-center gap-2"><svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Request sent successfully! Mentors will be notified.</div>}
+
+              <button 
+                onClick={handleSendRequest}
+                disabled={isSubmitting || submitSuccess}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition ${
+                  submitSuccess 
+                    ? "bg-green-500 hover:bg-green-600 cursor-default" 
+                    : "bg-indigo-600 hover:bg-indigo-700"
+                } disabled:opacity-70`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending Request...
+                  </>
+                ) : submitSuccess ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Request Sent!
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Send {selectedRole === "mentor" ? "Mentorship" : "Tutoring"} Request
+                  </>
+                )}
               </button>
             </div>
           </div>

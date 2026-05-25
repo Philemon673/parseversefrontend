@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Bell, ArrowLeft } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const tabs = [];
 
@@ -31,6 +32,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("For You");
+  const { user } = useAuth();
   const pageTitle = activeNavlabel(navItems, "Home"); // dynamic title based on path
 
   // Check if we are on one of the searchbar tag pages
@@ -75,11 +77,21 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow">
-            LA
+            {user && user.firstName ? 
+              (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase() : 
+              'LA'
+            }
           </div>
           <div className="text-right">
-            <div className="text-sm font-semibold text-gray-800">Lora Azuwesi</div>
-            <div className="text-xs text-purple-500 font-bold tracking-wider">STUDENT</div>
+            <div className="text-sm font-semibold text-gray-800">
+              {user && user.firstName ? 
+                `${user.firstName} ${user.lastName || ''}` : 
+                'Lora Azuwesi'
+              }
+            </div>
+            <div className="text-xs text-purple-500 font-bold tracking-wider">
+              {user ? user.role : 'STUDENT'}
+            </div>
           </div>
         </div>
 

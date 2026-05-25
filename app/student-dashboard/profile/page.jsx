@@ -1,6 +1,6 @@
 "use client";
 import Student from "../../../assets/student.jpg"
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Mail,
@@ -19,9 +19,13 @@ import {
     Save,
     X,
     Smile,
+    Loader2,
+    AlertCircle,
+    User,
 } from "lucide-react";
+import { userService } from "../../../lib/userService";
 
-const tabs = ["Overview", "Courses", "Achievements", "Certificates"];
+const tabs = ["Overview", "Achievements", "Certificates"];
 
 const courses = [
     {
@@ -136,29 +140,147 @@ export default function StudentProfilePage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState("Overview");
     const [editing, setEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [user, setUser] = useState(null);
 
     const [formData, setFormData] = useState({
-        email: "dhakaahmed@gnmail.com",
-        country: "Bangladesh",
-        phone: "+880 1712 345 678",
-        city: "Dhaka, Bangladesh",
-        memberSince: "Member since Oct 2023",
+        firstName: "",
+        lastName: "",
+        email: "",
+        country: "",
+        phone: "",
+        city: "",
     });
 
     const [savedData, setSavedData] = useState({ ...formData });
 
-    function handleSave() {
-        setSavedData({ ...formData });
-        setEditing(false);
+    // Load user data on component mount
+    useEffect(() => {
+        loadUserProfile();
+    }, []);
+
+    async function loadUserProfile() {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Get current user from auth context
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.id) {
+                setError('No user session found. Please log in.');
+                return;
+            }
+            
+            // Fetch user data from API using the authenticated user's ID
+            const userData = await userService.getUserProfile(currentUser.id);
+            setUser(userData);
+            
+            const profileData = {
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                email: userData.email,
+                country: userData.country,
+                phone: userData.phone,
+                city: userData.city,
+            };
+            
+            setFormData(profileData);
+            setSavedData(profileData);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load profile');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleSave() {
+        try {
+            setSaving(true);
+            setError(null);
+            
+            // Get current user from auth context
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            
+            if (!currentUser.id) {
+                setError('No user session found. Please log in.');
+                return;
+            }
+            
+            const updatedUser = await userService.updateUserProfile(currentUser.id, formData);
+            setUser(updatedUser);
+            setSavedData({ ...formData });
+            setEditing(false);
+            
+            // Update the stored user session with new data
+            const updatedSession = {
+                ...currentUser,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                email: updatedUser.email
+            };
+            localStorage.setItem('currentUser', JSON.stringify(updatedSession));
+            
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save profile');
+        } finally {
+            setSaving(false);
+        }
     }
 
     function handleCancel() {
         setFormData({ ...savedData });
         setEditing(false);
+        setError(null);
     }
+
+    // capitalize: first letter uppercase, rest lowercase
+    const capitalize = (str) =>
+        str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str;
 
     function update(field) {
         return (value) => setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+
+    function updateCapitalized(field) {
+        return (value) => setFormData((prev) => ({ ...prev, [field]: capitalize(value) }));
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-100 p-6 flex items-center justify-center">
+                <div className="flex items-center gap-3 text-slate-600">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>Loading profile...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error && !user) {
+        return (
+            <div className="min-h-screen bg-slate-100 p-6 flex items-center justify-center">
+                <div className="bg-white rounded-2xl p-8 shadow-sm border border-red-200 max-w-md">
+                    <div className="flex items-center gap-3 text-red-600 mb-4">
+                        <AlertCircle className="w-6 h-6" />
+                        <span className="font-semibold">Error Loading Profile</span>
+                    </div>
+                    <p className="text-slate-600 mb-4">{error}</p>
+                    <button 
+                        onClick={loadUserProfile}
+                        className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
     }
 
     return (
@@ -172,7 +294,7 @@ export default function StudentProfilePage() {
                     <div className="relative h-72 bg-slate-200 overflow-hidden">
                         <img
                             src={Student.src}
-                            alt="Lora Azuwesi"
+                            alt={`${user.firstName} ${user.lastName}`}
                             className="w-full h-full object-cover object-top"
                         />
                         <button className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
@@ -182,17 +304,17 @@ export default function StudentProfilePage() {
 
                     <div className="p-5 flex flex-col gap-3 border-t border-slate-100">
                         <div>
-                            <h2 className="font-bold text-slate-800">Lora Azuwesi</h2>
-                            <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
-                                STUDENT
+                            <h2 className="font-bold text-slate-800">{user.firstName} {user.lastName}</h2>
+                            <span className="inline-block mt-1.5 text-white bg-purple-500 py-1 px-3 rounded-full text-[9px] font-bold tracking-widest">
+                                {user.role}
                             </span>
                         </div>
                         <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
                             <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-800">203</span>
+                                <span className="font-bold text-slate-800">{user.stats?.enrolledCourses || 0}</span>
                                 <span className="text-xs text-slate-400">Enrolled Courses</span>
                                 <Award className="w-4 h-4 text-indigo-400 ml-auto" />
-                                <span className="font-bold text-slate-800">15</span>
+                                <span className="font-bold text-slate-800">{user.stats?.certificates || 0}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1.5">
@@ -201,7 +323,7 @@ export default function StudentProfilePage() {
                                 </div>
                                 <div className="flex items-center gap-1.5 ml-auto">
                                     <CheckCircle className="w-4 h-4 text-blue-500" fill="#3b82f6" />
-                                    <span className="font-bold text-slate-800">480</span>
+                                    <span className="font-bold text-slate-800">{user.stats?.points || 0}</span>
                                 </div>
                             </div>
                         </div>
@@ -212,21 +334,21 @@ export default function StudentProfilePage() {
                 <div className="bg-white rounded-3xl shadow-sm flex-1 p-6 flex flex-col gap-4">
 
                     <div className="border-b border-slate-100 pb-2">
-                        <h1 className="text-2xl font-bold text-slate-800">Lora Azuwesi</h1>
-                        <span className="inline-block mt-1.5 text-white  bg-purple-500 and bg-purple-600 py-1 px-3 rounded-full text-[9px] font-bold px-2.5 py-0.5 rounded-full tracking-widest">
-                            STUDENT
+                        <h1 className="text-2xl font-bold text-slate-800">{user.firstName} {user.lastName}</h1>
+                        <span className="inline-block mt-1.5 text-white bg-purple-500 py-1 px-3 rounded-full text-[9px] font-bold tracking-widest">
+                            {user.role}
                         </span>
                     </div>
 
                     <div className="flex items-center gap-5 text-sm border-b border-slate-100 pb-2">
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-slate-800 text-base">120</span>
+                            <span className="font-bold text-slate-800 text-base">{user.stats?.hoursStudied || 0}</span>
                             <span className="text-slate-400 text-xs">Hours Studied</span>
                         </div>
                         <div className="w-px h-4 bg-slate-200" />
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-slate-800 text-base">4</span>
-                            <span className="text-slate-400 text-xs">4 Courses</span>
+                            <span className="font-bold text-slate-800 text-base">{user.stats?.completedCourses || 0}</span>
+                            <span className="text-slate-400 text-xs">Courses</span>
                             <Award className="w-4 h-4 text-indigo-400 ml-1" />
                             <CheckCircle className="w-4 h-4 text-blue-500 ml-1" fill="#3b82f6" />
                         </div>
@@ -234,23 +356,23 @@ export default function StudentProfilePage() {
 
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 bg-[#f4f0fd] border border-slate-100 rounded-2xl px-5 py-1">
-                            <span className="font-bold text-slate-800">203</span>
+                            <span className="font-bold text-slate-800">{user.stats?.enrolledCourses || 0}</span>
                             <span className="text-slate-400 text-xs">Enrolled Courses</span>
                             <BookOpen className="w-4 h-4 text-slate-400 ml-1" />
                         </div>
-                        <div className="flex items-center gap-2 bg-[#f4f0fd] border border-slate-100 rounded-2xl px-5 py-1 ">
-                            <span className="font-bold text-slate-800">15</span>
+                        <div className="flex items-center gap-2 bg-[#f4f0fd] border border-slate-100 rounded-2xl px-5 py-1">
+                            <span className="font-bold text-slate-800">{user.stats?.certificates || 0}</span>
                             <span className="text-slate-400 text-xs">Certificates</span>
                             <Award className="w-4 h-4 text-indigo-400 ml-1" />
                         </div>
                         <div className="flex items-center gap-2 bg-[#f4f0fd] border border-slate-100 rounded-2xl px-5 py-1">
-                            <span className="font-bold text-slate-800">480</span>
+                            <span className="font-bold text-slate-800">{user.stats?.points || 0}</span>
                             <span className="text-slate-400 text-xs">Points</span>
                             <Star className="w-4 h-4 text-slate-400 ml-1" />
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 border border-slate-200 rounded-lg bg-[#f4f0fd] ">
+                    <div className="flex items-center gap-1 border border-slate-200 rounded-lg bg-[#f4f0fd]">
                         {tabs.map((tab) => (
                             <TabButton
                                 key={tab}
@@ -277,21 +399,34 @@ export default function StudentProfilePage() {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={handleCancel}
-                                            className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition"
+                                            disabled={saving}
+                                            className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition disabled:opacity-50"
                                         >
                                             <X className="w-3 h-3" />
                                             Cancel
                                         </button>
                                         <button
                                             onClick={handleSave}
-                                            className="flex items-center gap-1.5 text-xs text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition"
+                                            disabled={saving}
+                                            className="flex items-center gap-1.5 text-xs text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
                                         >
-                                            <Save className="w-3 h-3" />
-                                            Save
+                                            {saving ? (
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                                <Save className="w-3 h-3" />
+                                            )}
+                                            {saving ? 'Saving...' : 'Save'}
                                         </button>
                                     </div>
                                 )}
                             </div>
+
+                            {error && (
+                                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {error}
+                                </div>
+                            )}
 
                             <div className="flex flex-col gap-2">
                                 <EditableField
@@ -305,9 +440,26 @@ export default function StudentProfilePage() {
 
                                 <div className="grid grid-cols-2 gap-2">
                                     <EditableField
+                                        icon={<User className="w-4 h-4" />}
+                                        value={formData.firstName}
+                                        onChange={update("firstName")}
+                                        editing={editing}
+                                        placeholder="First Name"
+                                    />
+                                    <EditableField
+                                        icon={<User className="w-4 h-4" />}
+                                        value={formData.lastName}
+                                        onChange={update("lastName")}
+                                        editing={editing}
+                                        placeholder="Last Name"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                    <EditableField
                                         icon={<MapPin className="w-4 h-4" />}
                                         value={formData.country}
-                                        onChange={update("country")}
+                                        onChange={updateCapitalized("country")}
                                         editing={editing}
                                         placeholder="Enter country"
                                     />
@@ -325,31 +477,15 @@ export default function StudentProfilePage() {
                                     <EditableField
                                         icon={<MapPin className="w-4 h-4" />}
                                         value={formData.city}
-                                        onChange={update("city")}
+                                        onChange={updateCapitalized("city")}
                                         editing={editing}
                                         placeholder="Enter city"
                                     />
                                     <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50">
                                         <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="#facc15" />
-                                        {editing ? (
-                                            <input
-                                                type="text"
-                                                value={formData.memberSince}
-                                                onChange={(e) => update("memberSince")(e.target.value)}
-                                                className="flex-1 text-xs text-slate-700 bg-transparent focus:outline-none"
-                                            />
-                                        ) : (
-                                            <span className="flex-1 text-xs text-slate-600">{formData.memberSince}</span>
-                                        )}
-                                        <button
-                                            onClick={editing ? handleSave : () => setEditing(true)}
-                                            className="ml-1 px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition whitespace-nowrap flex items-center gap-1"
-                                        >
-                                            {editing
-                                                ? <><Save className="w-3 h-3" /> Save</>
-                                                : <><Edit className="w-3 h-3" /> Edit Profile</>
-                                            }
-                                        </button>
+                                        <span className="flex-1 text-xs text-slate-600">
+                                            {user.createdAt ? `Joined ${new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : 'Member'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

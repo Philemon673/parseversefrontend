@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Bell } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const tabs = [];
 
@@ -24,6 +25,7 @@ export function activeNavlabel(navItems, defaultItems = "Home") {
 // Default export for Navbar component
 export default function Navbar() {
   const [activeTab, setActiveTab] = useState("For You");
+  const { user } = useAuth();
   const pageTitle = activeNavlabel(navItems, "Home"); // dynamic title based on path
 
   return (
@@ -52,11 +54,21 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow">
-            MN
+            {user && user.firstName ? 
+              (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase() : 
+              'TU'
+            }
           </div>
           <div className="text-right">
-            <div className="text-sm font-semibold text-gray-800">Martin Nel</div>
-            <div className="text-xs text-purple-500 font-medium">TUTOR</div>
+            <div className="text-sm font-semibold text-gray-800">
+              {user && user.firstName ? 
+                `${user.firstName} ${user.lastName || ''}` : 
+                'Tutor User'
+              }
+            </div>
+            <div className="text-xs text-purple-500 font-medium">
+              {user ? user.role : 'TUTOR'}
+            </div>
           </div>
         </div>
 

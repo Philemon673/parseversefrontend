@@ -4,6 +4,8 @@ import { ReactNode, useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/mentor-component/siderbar";
 import Navbar from "@/mentor-component/navbars";
+import { NotificationProvider } from "@/lib/notification-context";
+import { AuthProvider } from "@/lib/auth-context";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -51,27 +53,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [pathname, hideOnScroll]);
 
   return (
-    <div className="flex min-h-screen">
-      {!isSessionPage && <Sidebar />}
-      <div className="flex flex-1 flex-col">
+    <AuthProvider>
+      <NotificationProvider>
+        <div className="flex min-h-screen">
+          {!isSessionPage && <Sidebar />}
+          <div className="flex flex-1 flex-col">
 
-        {/* Navbar — slides up when scrolling, reappears when stopped */}
-        {!isSessionPage && (
-          <div
-            className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 -translate-y-full pointer-events-none"
-              }`}
-          >
-            <Navbar />
+            {/* Navbar — slides up when scrolling, reappears when stopped */}
+            {!isSessionPage && (
+              <div
+                className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-full pointer-events-none"
+                  }`}
+              >
+                <Navbar />
+              </div>
+            )}
+
+            <main className={`flex-1 overflow-y-auto bg-[#f2f3fa] ${isSessionPage ? "p-0" : "p-6"}`}>
+              {children}
+            </main>
+
           </div>
-        )}
-
-        <main className={`flex-1 overflow-y-auto bg-[#f2f3fa] ${isSessionPage ? "p-0" : "p-6"}`}>
-          {children}
-        </main>
-
-      </div>
-    </div>
+        </div>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

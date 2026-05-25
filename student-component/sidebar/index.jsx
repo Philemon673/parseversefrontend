@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { useNotifications } from "@/lib/notification-context";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/student-dashboard/Home" },
@@ -19,12 +20,13 @@ const navItems = [
   { icon: FolderOpen, label: "Profile", href: "/student-dashboard/profile" },
   { icon: MessageCircle, label: "Groups", href: "/student-dashboard/groups" },
   { icon: MessageCircle, label: "Chat", href: "/student-dashboard/chat" },
-  { icon: Bell, label: "Notifications", href: "/student-dashboard/notification", badge: 2 },
+  { icon: Bell, label: "Notifications", href: "/student-dashboard/notification" },
   { icon: Settings, label: "Resquest", href: "/student-dashboard/request" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { unreadCount } = useNotifications();
 
   // Determine which nav item is active based on pathname
  const getActiveLabel = () => {
@@ -61,8 +63,9 @@ export default function Sidebar() {
 
         {/* Nav Items */}
         <nav className="flex flex-col gap-1">
-          {navItems.map(({ icon: Icon, label, badge, href }) => {
+          {navItems.map(({ icon: Icon, label, href }) => {
             const isActive = active === label;
+            const isNotifications = label === "Notifications";
             return (
               <Link
                 key={label}
@@ -76,9 +79,9 @@ export default function Sidebar() {
                 {isActive && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-white" />}
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 {label}
-                {badge && (
+                {isNotifications && unreadCount > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {badge}
+                    {unreadCount}
                   </span>
                 )}
               </Link>
