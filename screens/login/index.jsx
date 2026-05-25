@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Galaxy from "@/assets/galaxy.png";
 import SignUpForm from "../signup/index.jsx";
 import { Eye, EyeOff, BookOpen, Users, Award } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function ParseVersePage() {
   const [activeTab, setActiveTab] = useState("login");
@@ -131,8 +133,8 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = require("@/lib/auth-context").useAuth();
-  const router = require("next/navigation").useRouter();
+  const { login } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

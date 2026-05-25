@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authApi, clearTokens } from '@/lib/api';
 
 interface User {
   id: number;
@@ -15,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<User>;
   signup: (userData: any) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
   error: string | null;
@@ -138,13 +139,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setError(null);
-    localStorage.removeItem('currentUser');
-    
-    // In production, call logout API
-    // fetch('/api/auth/logout', { method: 'POST' });
+  const logout = async (): Promise<void> => {
+    try {
+      // Call backend logout endpoint (invalidates refresh token server-side)
+      await authApi.logout();
+    } catch {
+      // Ignore errors — proceed with client-side cleanup regardless
+    } finally {
+      // Clear React state
+      setUser(null);
+      setError(null);
+
+      // Clear ALL token/session keys used across the app
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      // Keys used by lib/api.ts
+      clearTokens();
+    }
   };
 
   const updateUser = (userData: Partial<User>) => {

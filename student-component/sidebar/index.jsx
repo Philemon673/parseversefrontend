@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import SidebarBg from "@/assets/contentsider.png";
 import {
   Home,
@@ -13,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-context";
+import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/student-dashboard/Home" },
@@ -99,15 +101,99 @@ export default function Sidebar() {
         </div>
 
         {/* Logout */}
-        <div className="pt-4 mt-4 mx-2 pb-2">
-          <button className="w-full flex items-center px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500 hover:border-red-400 transition-all duration-300 text-sm font-semibold text-white/90 hover:text-white group shadow-sm">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors mr-3">
-              <LogOut className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
-            </div>
-            <span className="tracking-wide">Sign Out</span>
-          </button>
-        </div>
+        <LogoutButton />
       </div>
     </aside>
+  );
+}
+
+// ── Logout Button with confirmation modal ─────────────────────────────────────
+function LogoutButton() {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } catch {
+      // Auth-context already cleared tokens on error — redirect anyway
+    } finally {
+      setLoggingOut(false);
+      setShowConfirm(false);
+      router.push("/login");
+    }
+  }
+
+  return (
+    <>
+      {/* Trigger button */}
+      <div className="pt-4 mt-4 mx-2 pb-2">
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="w-full flex items-center px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500 hover:border-red-400 transition-all duration-300 text-sm font-semibold text-white/90 hover:text-white group shadow-sm"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors mr-3">
+            <LogOut className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
+          </div>
+          <span className="tracking-wide">Sign Out</span>
+        </button>
+      </div>
+
+      {/* Confirmation modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !loggingOut && setShowConfirm(false)}
+          />
+
+          {/* Modal card */}
+          <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-[320px] flex flex-col items-center gap-4">
+            {/* Icon */}
+            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+              <LogOut className="w-7 h-7 text-red-500" />
+            </div>
+
+            <div className="text-center">
+              <h3 className="font-bold text-slate-800 text-base">Sign out of ParseVerse?</h3>
+              <p className="text-slate-500 text-sm mt-1">
+                You&apos;ll need to log back in to access your dashboard.
+              </p>
+            </div>
+
+            <div className="flex gap-3 w-full mt-1">
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={loggingOut}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {loggingOut ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Signing out…
+                  </>
+                ) : (
+                  "Sign Out"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
