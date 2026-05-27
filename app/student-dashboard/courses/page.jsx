@@ -4,64 +4,8 @@ import { useState } from "react";
 import { Search, ChevronDown, MoreVertical, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-
-const courses = [
-  {
-    id: 1,
-    title: "Complete JavaScript Course",
-    updated: "Updated 5 days ago",
-    lessons: 55,
-    completedLessons: 27,
-    hours: "12 hrs",
-    extraHours: "18 hours",
-    percent: 88,
-    extra: "610%",
-    instructor: "James Smith",
-    instructorAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80",
-    rating: 4,
-    status: "Progress",
-    statusColor: "bg-yellow-400 text-yellow-900",
-    tab: "progress",
-    image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=600&q=80",
-  },
-  {
-    id: 2,
-    title: "Data Science with Python",
-    updated: "Updated 1 week ago",
-    lessons: 32,
-    completedLessons: 16,
-    hours: "16 hrs",
-    extraHours: "8 hours",
-    percent: 50,
-    extra: "140%",
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    rating: 0,
-    status: null,
-    tab: "progress",
-    image: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&q=80",
-  },
-  {
-    id: 3,
-    title: "Python for Beginners",
-    updated: "Updated 3 days ago",
-    lessons: 45,
-    completedLessons: 45,
-    hours: "12 hrs",
-    extraHours: "18 hours",
-    percent: 100,
-    extra: null,
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    rating: 3.5,
-    status: "Completed",
-    statusColor: "bg-purple-500 text-white",
-    tab: "completed",
-    image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&q=80",
-    hasCertificate: true,
-  },
-];
+import { useEffect } from "react";
+import { getMyEnrolledCourses } from "../../../lib/courseService";
 
 const tabs = [
   { label: "All", count: 203, key: "all" },
@@ -104,118 +48,69 @@ function ProgressBar({ value }) {
 
 // ── Course Card ───────────────────────────────────────────────────────────────
 
-function CourseCard({ course }) {
+function CourseCard({ enrollment }) {
   const router = useRouter();
+  const { course, progress } = enrollment;
+
+  const totalLessons = course._count?.modules || 1; // Assuming total modules as fallback
+  const completedLessons = progress?.completedLessons || 0;
+  const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const isCompleted = percent >= 100;
+  const status = isCompleted ? "Completed" : "Progress";
+  const statusColor = isCompleted ? "bg-purple-500 text-white" : "bg-yellow-400 text-yellow-900";
+  
+  const instructorName = course.instructor 
+    ? `${course.instructor.firstName} ${course.instructor.lastName}`
+    : "Instructor";
+  const instructorAvatarInitial = instructorName.charAt(0);
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col">
-
-      {/* Thumbnail */}
-      <div className="relative h-44 overflow-hidden">
-        <img
-          src={course.image}
-          alt={course.title}
-          className="w-full h-full object-cover"
-        />
-
-        {/* Status badge */}
-        {course.status && (
-          <span className={"absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full " + course.statusColor}>
-            {course.status}
-          </span>
-        )}
-
-        {/* Instructor avatar overlapping image */}
-        <div className="absolute -bottom-5 left-4">
-          <img
-            src={course.instructorAvatar}
-            alt={course.instructor}
-            className="w-10 h-10 rounded-full border-2 border-white object-cover shadow"
-          />
+      <div className="relative h-44 overflow-hidden bg-slate-200">
+        <div className="w-full h-full flex items-center justify-center text-slate-400">
+          No Image
         </div>
-
-        {/* More options */}
-        <button className="absolute top-3 right-3 w-7 h-7 bg-white/80 rounded-full flex items-center justify-center hover:bg-white transition">
-          <MoreVertical className="w-4 h-4 text-slate-500" />
-        </button>
-
-        {/* Rating on image (course 1 only) */}
-        {course.id === 1 && course.rating > 0 && (
-          <div className="absolute bottom-3 right-3">
-            <StarRating rating={course.rating} />
+        <span className={"absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full " + statusColor}>
+          {status}
+        </span>
+        <div className="absolute -bottom-5 left-4">
+          <div className="w-10 h-10 rounded-full border-2 border-white bg-indigo-500 flex items-center justify-center text-white font-bold shadow">
+            {instructorAvatarInitial}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Content */}
       <div className="pt-7 px-4 pb-4 flex flex-col gap-2 flex-1">
-
-        {/* Title + updated */}
         <div>
           <h3 className="font-bold text-slate-800 text-sm leading-tight">{course.title}</h3>
-          <p className="text-xs text-slate-400 mt-0.5">{course.updated}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{course.type}</p>
         </div>
 
-        {/* Lessons + hours row */}
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span>{course.lessons} Lessons</span>
+        <div className="flex items-center gap-2 text-xs text-slate-600 font-medium mt-2">
+          <span className="text-slate-800 font-bold">{completedLessons}</span>
+          <span className="text-slate-400">/ {totalLessons} Lessons</span>
           <span className="text-slate-300">·</span>
-          <span>{course.hours}</span>
-          {course.extraHours && (
-            <>
-              <span className="text-slate-300">|</span>
-              <span className="flex items-center gap-1">
-                ⭐ {course.extraHours}
-              </span>
-            </>
-          )}
+          <span className="text-slate-700">{percent}%</span>
         </div>
 
-        {/* Progress stats */}
-        <div className="flex items-center gap-2 text-xs text-slate-600 font-medium">
-          <span className="text-slate-800 font-bold">{course.completedLessons}</span>
-          <span className="text-slate-400">/ {course.lessons} Lessons</span>
-          <span className="text-slate-300">·</span>
-          <span className="text-slate-700">{course.percent}%</span>
-          {course.extra && (
-            <>
-              <span className="text-slate-300">|</span>
-              <span className="text-slate-500">{course.extra}</span>
-            </>
-          )}
-        </div>
+        <ProgressBar value={percent} />
 
-        {/* Progress bar */}
-        <ProgressBar value={course.percent} />
-
-        {/* Star rating below bar (courses 2 & 3) */}
-        {course.id !== 1 && course.rating > 0 && (
-          <StarRating rating={course.rating} />
-        )}
-
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-auto pt-1">
+        <div className="flex items-center justify-between mt-auto pt-3">
           <div className="flex items-center gap-2">
-            <img
-              src={course.instructorAvatar}
-              alt={course.instructor}
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <span className="text-xs text-slate-600 font-medium">{course.instructor}</span>
+            <span className="text-xs text-slate-600 font-medium">{instructorName}</span>
           </div>
 
-          {course.hasCertificate ? (
-            <button className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition">
-              Certificate
-            </button>
-          ) : (
-            <button 
-              onClick={() => router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`)}
-              className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
-            >
-              Continue
-            </button>
-          )}
+          <button 
+            onClick={() => {
+              const url = course.type === "Hardcopy"
+                ? `/student-dashboard/coursedetails/courses/hardcopy?courseId=${course.id}`
+                : `/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`;
+              router.push(url);
+            }}
+            className="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
+          >
+            Continue
+          </button>
         </div>
       </div>
     </div>
@@ -228,10 +123,32 @@ export default function CoursesPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
+  const [enrollments, setEnrollments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = courses.filter((c) => {
-    const matchTab = activeTab === "all" || c.tab === activeTab;
-    const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    async function fetchEnrollments() {
+      try {
+        const data = await getMyEnrolledCourses();
+        setEnrollments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load enrolled courses", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEnrollments();
+  }, []);
+
+  const filtered = enrollments.filter((enrollment) => {
+    const course = enrollment.course;
+    const isCompleted = enrollment.progress?.completedLessons >= (course._count?.modules || 1);
+    
+    let matchTab = true;
+    if (activeTab === "progress") matchTab = !isCompleted;
+    if (activeTab === "completed") matchTab = isCompleted;
+
+    const matchSearch = course.title?.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
@@ -299,10 +216,14 @@ export default function CoursesPage() {
       </div>
 
       {/* ── Course Grid ─────────────────────────────────────────────── */}
-      {filtered.length > 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+        </div>
+      ) : filtered.length > 0 ? (
         <div className="grid grid-cols-3 gap-5">
-          {filtered.map((course) => (
-            <CourseCard key={course.id} course={course} />
+          {filtered.map((enrollment) => (
+            <CourseCard key={enrollment.id || enrollment.courseId} enrollment={enrollment} />
           ))}
         </div>
       ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ThumbsUp,
   Heart,
@@ -9,141 +9,14 @@ import {
   Star,
   ChevronDown,
   Smile,
-  Download,
   FileText,
-  ZoomIn,
-  ZoomOut,
-  ChevronLeft,
-  ChevronRight,
-  Printer,
   Maximize,
   Minimize,
   X,
+  CheckCircle,
 } from "lucide-react";
-
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-
-const coursesData = [
-  {
-    id: 0,
-    title: "Complete JavaScript Course",
-    updated: "Updated 5 days ago",
-    lessons: 55,
-    pages: 245,
-    rating: 4.5,
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    completedPages: 120,
-    totalPages: 245,
-    percent: 88,
-    likes: "1.5k",
-    shares: 6,
-    thumbnail: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=1200&q=80",
-    pdfUrl: "/sample.pdf",
-    status: null,
-    statusColor: "",
-    hasCertificate: false,
-    progress: 88,
-    description: "Master JavaScript from the ground up. This comprehensive course covers everything from variables and functions to advanced topics like async/await, closures, and the DOM. Perfect for beginners and intermediate developers looking to solidify their JavaScript skills.",
-    tags: ["JavaScript", "WebDev", "Programming", "Frontend"],
-  },
-  {
-    id: 1,
-    title: "Python for Beginners",
-    updated: "Updated 5 days ago",
-    lessons: 45,
-    pages: 320,
-    rating: 4,
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    completedPages: 320,
-    totalPages: 320,
-    percent: 100,
-    likes: "1.2k",
-    shares: 4,
-    thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&q=80",
-    pdfUrl: "/python.pdf",
-    status: "module 1",
-    statusColor: "bg-yellow-400 text-yellow-900",
-    hasCertificate: true,
-    progress: 100,
-    description: "Learn Python programming from scratch. This beginner-friendly course covers Python basics, data structures, functions, and object-oriented programming. Build real-world projects and gain confidence in Python development.",
-    tags: ["Python", "Programming", "Beginner", "Coding"],
-  },
-  {
-    id: 2,
-    title: "Data Science with Python",
-    updated: "Updated 1 week ago",
-    lessons: 32,
-    pages: 420,
-    rating: 3.5,
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    completedPages: 210,
-    totalPages: 420,
-    percent: 50,
-    likes: "890",
-    shares: 3,
-    thumbnail: "https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=600&q=80",
-    pdfUrl: "/datascience.pdf",
-    status: "module 2",
-    statusColor: "bg-indigo-500 text-white",
-    hasCertificate: false,
-    progress: 50,
-    description: "Dive into data science using Python. Learn data analysis, visualization with matplotlib and seaborn, pandas for data manipulation, and introduction to machine learning with scikit-learn.",
-    tags: ["DataScience", "Python", "MachineLearning", "Analytics"],
-  },
-  {
-    id: 3,
-    title: "React Development Masterclass",
-    updated: "Updated 2 days ago",
-    lessons: 30,
-    pages: 280,
-    rating: 4,
-    instructor: "Mashok Khan",
-    instructorAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    completedPages: 168,
-    totalPages: 280,
-    percent: 60,
-    likes: "2.1k",
-    shares: 8,
-    thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80",
-    pdfUrl: "/react.pdf",
-    status: "module 3",
-    statusColor: "bg-indigo-500 text-white",
-    hasCertificate: false,
-    progress: 60,
-    description: "Master React.js and build modern web applications. Learn hooks, state management, routing, API integration, and best practices for building scalable React applications.",
-    tags: ["React", "WebDev", "JavaScript", "Frontend"],
-  },
-];
-
-const commentsData = [
-  {
-    id: 1,
-    name: "Sarah Thompson",
-    time: "2h ago",
-    text: "This is the best explanation of callbacks I've come across. So clear and easy to understand!",
-    likes: 9,
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80",
-  },
-  {
-    id: 2,
-    name: "Kevin Brown",
-    time: "1Wk ago",
-    text: "My skills have seriously improved after these lessons, thank you!!",
-    likes: 15,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80",
-  },
-  {
-    id: 3,
-    name: "Lisa M.",
-    time: "1Wk ago",
-    text: "The explanations are detailed yet easy to follow! Your teaching-style is clear",
-    likes: 7,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80",
-  },
-];
+import { useSearchParams, useRouter } from "next/navigation";
+import { getCourse, getCourseModules, getCourseProgress, updateCourseProgress } from "@/lib/courseService";
 
 // ── Star Rating ───────────────────────────────────────────────────────────────
 
@@ -168,133 +41,38 @@ function ProgressBar({ value }) {
   return (
     <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
       <div
-        className="h-full rounded-full bg-indigo-500"
+        className="h-full rounded-full bg-indigo-500 transition-all duration-300"
         style={{ width: `${value}%` }}
       />
     </div>
   );
 }
 
-// ── Related Course Card ───────────────────────────────────────────────────────
+// ── Module Item Sidebar ───────────────────────────────────────────────────────
 
-function RelatedCourseCard({ course, isActive, onSelect }) {
+function ModuleItem({ module, isActive, isCompleted, onSelect }) {
   return (
     <div 
-      className={`bg-white rounded-2xl overflow-hidden shadow-sm border cursor-pointer transition-all ${
+      className={`bg-white rounded-2xl overflow-hidden shadow-sm border cursor-pointer transition-all p-3 flex flex-col gap-2 ${
         isActive 
           ? "border-indigo-500 ring-2 ring-indigo-200" 
           : "border-slate-100 hover:border-indigo-300"
       }`}
       onClick={onSelect}
     >
-      <div className="relative h-32 overflow-hidden">
-        <img
-          src={course.thumbnail}
-          alt={course.title}
-          className="w-full h-full object-cover"
-        />
-        {course.status && (
-          <span className={`absolute top-2 left-2 text-[10px] font-bold px-2.5 py-1 rounded-full ${course.statusColor}`}>
-            {course.status}
-          </span>
-        )}
-        <div className="absolute -bottom-4 left-3">
-          <img
-            src={course.instructorAvatar}
-            alt={course.instructor}
-            className="w-9 h-9 rounded-full border-2 border-white object-cover shadow"
-          />
-        </div>
-        <button 
-          className="absolute top-2 right-2 text-white/80 hover:text-white transition"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="text-sm font-bold text-slate-800 line-clamp-2">{module.title}</h3>
+        {isCompleted && <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />}
       </div>
-
-      <div className="pt-6 px-3 pb-3 flex flex-col gap-1.5">
-        <h3 className="font-bold text-slate-800 text-sm leading-tight truncate">
-          {course.title}
-        </h3>
-        <p className="text-[11px] text-slate-400">{course.updated}</p>
-
-        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 flex-wrap">
-          <span>{course.pages} Pages</span>
-          <span className="text-slate-300">·</span>
-          <span>{course.lessons} Lessons</span>
-          <span className="text-slate-300">·</span>
-          <span className="flex items-center gap-0.5">
-            <Star className="w-3 h-3" fill="#f59e0b" stroke="#f59e0b" />
-            {course.percent}%
-          </span>
-        </div>
-
-        <ProgressBar value={course.progress} />
-
-        <div className="flex items-center justify-between pt-1">
-          <StarRating rating={course.rating} />
-          <button 
-            className="px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
-          >
-            View
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <img
-            src={course.instructorAvatar}
-            alt={course.instructor}
-            className="w-5 h-5 rounded-full object-cover"
-          />
-          <span className="text-[11px] text-slate-500">{course.instructor}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Comment Item ──────────────────────────────────────────────────────────────
-
-function CommentItem({ comment }) {
-  const [liked, setLiked] = useState(false);
-  const [hearted, setHearted] = useState(false);
-
-  return (
-    <div className="flex items-start gap-3">
-      <img
-        src={comment.avatar}
-        alt={comment.name}
-        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-      />
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-800 text-sm">{comment.name}</span>
-          <span className="text-xs text-slate-400">{comment.time}</span>
-        </div>
-        <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-          {comment.text}
-        </p>
-        <div className="flex items-center gap-4 mt-1.5">
-          <button
-            onClick={() => setLiked(!liked)}
-            className={`flex items-center gap-1 text-xs font-medium transition ${liked ? "text-indigo-600" : "text-slate-400 hover:text-indigo-500"}`}
-          >
-            <ThumbsUp className="w-3.5 h-3.5" />
-            {comment.likes + (liked ? 1 : 0)}
-          </button>
-          <button
-            onClick={() => setHearted(!hearted)}
-            className={`flex items-center gap-1 text-xs font-medium transition ${hearted ? "text-red-500" : "text-slate-400 hover:text-red-400"}`}
-          >
-            <Heart className="w-3.5 h-3.5" />
-            Reply
-          </button>
-        </div>
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="flex items-center gap-1">
+          <FileText className="w-3 h-3" />
+          Document
+        </span>
+        <span className="text-slate-300">•</span>
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+          {isActive ? 'READING' : module.status}
+        </span>
       </div>
     </div>
   );
@@ -303,19 +81,58 @@ function CommentItem({ comment }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function CourseReaderPage() {
-  const [activeCourseId, setActiveCourseId] = useState(0);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const courseId = searchParams.get("courseId");
+  const initialSectionId = searchParams.get("sectionId");
+  const initialLessonId = searchParams.get("lessonId"); 
+  
   const [activeTab, setActiveTab] = useState("Description");
   const [comment, setComment] = useState("");
-  const [allComments, setAllComments] = useState(commentsData);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [zoom, setZoom] = useState(100);
+  const [allComments, setAllComments] = useState([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Get current course based on active ID
-  const currentCourse = coursesData.find(course => course.id === activeCourseId) || coursesData[0];
   
-  // Get other courses for the sidebar (excluding current)
-  const relatedCourses = coursesData.filter(course => course.id !== activeCourseId);
+  const [course, setCourse] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [progress, setProgress] = useState(null);
+  const [activeModule, setActiveModule] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingProgress, setUpdatingProgress] = useState(false);
+
+  useEffect(() => {
+    if (!courseId) return;
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [courseData, modulesData, progressData] = await Promise.all([
+          getCourse(courseId),
+          getCourseModules(courseId),
+          getCourseProgress(courseId)
+        ]);
+        
+        setCourse(courseData);
+        const modulesList = Array.isArray(modulesData) ? modulesData : [];
+        setModules(modulesList);
+        setProgress(progressData);
+        
+        // Determine initial module to read
+        let targetModule = modulesList[0];
+        if (initialLessonId) {
+          const found = modulesList.find(m => m.id === initialLessonId);
+          if (found) targetModule = found;
+        } else if (progressData?.completedLessons > 0 && progressData.completedLessons < modulesList.length) {
+          targetModule = modulesList[progressData.completedLessons];
+        }
+        
+        setActiveModule(targetModule);
+      } catch (err) {
+        console.error("Failed to load course reader data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [courseId, initialLessonId]);
 
   function handleAddComment() {
     if (!comment.trim()) return;
@@ -333,348 +150,200 @@ export default function CourseReaderPage() {
     setComment("");
   }
 
-  function handleCourseSelect(courseId) {
-    setActiveCourseId(courseId);
+  function handleModuleSelect(module) {
+    setActiveModule(module);
     setActiveTab("Description");
-    setCurrentPage(1);
-    setZoom(100);
     setIsFullscreen(false);
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  function handleZoomIn() {
-    setZoom((prev) => Math.min(prev + 10, 200));
-  }
-
-  function handleZoomOut() {
-    setZoom((prev) => Math.max(prev - 10, 50));
-  }
-
-  function handleNextPage() {
-    setCurrentPage((prev) => Math.min(prev + 1, currentCourse.totalPages));
-  }
-
-  function handlePrevPage() {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  async function handleMarkComplete() {
+    if (!courseId || !activeModule || updatingProgress) return;
+    setUpdatingProgress(true);
+    try {
+      const activeIndex = modules.findIndex(m => m.id === activeModule.id);
+      const newCompletedCount = Math.max(progress?.completedLessons || 0, activeIndex + 1);
+      
+      await updateCourseProgress(courseId, newCompletedCount);
+      setProgress(prev => ({ ...prev, completedLessons: newCompletedCount }));
+      
+      // Auto-play next module if available
+      if (activeIndex + 1 < modules.length) {
+        setActiveModule(modules[activeIndex + 1]);
+      } else {
+        alert("Congratulations! You have completed all reading materials.");
+      }
+    } catch (err) {
+      console.error("Failed to update progress:", err);
+      alert("Failed to mark as completed. Try again.");
+    } finally {
+      setUpdatingProgress(false);
+    }
   }
 
   function toggleFullscreen() {
     setIsFullscreen(!isFullscreen);
-    if (!isFullscreen) {
-      // Entering fullscreen - reset zoom to fit screen
-      setZoom(100);
-    }
   }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 flex-col gap-4">
+        <p className="text-slate-500 font-medium">Course not found or access denied.</p>
+        <button 
+          onClick={() => router.back()}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  const completedCount = progress?.completedLessons || 0;
+  const totalCount = modules.length || 1;
+  const percentComplete = Math.round((completedCount / totalCount) * 100);
+  const instructorName = course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : "Instructor";
+
+  // Use module's signedPdfUrl if available, otherwise fallback to course's signedPdfUrl
+  const currentPdfUrl = activeModule?.signedPdfUrl || course.signedPdfUrl;
 
   return (
     <div
       className="min-h-screen p-4 flex flex-col gap-4"
-      
+      style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f5f3ff 50%, #eef2ff 100%)" }}
     >
-      {/* Fullscreen PDF Viewer Modal */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          {/* Fullscreen Header */}
-          <div className="bg-slate-900 px-6 py-3 flex items-center justify-between border-b border-slate-700">
+      {/* Fullscreen PDF Reader Modal */}
+      {isFullscreen && currentPdfUrl && (
+        <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col">
+          <div className="bg-slate-900/90 px-6 py-3 flex items-center justify-between absolute top-0 left-0 right-0 z-10 pointer-events-none backdrop-blur-sm border-b border-white/10">
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-indigo-400" />
               <div>
-                <h2 className="text-white font-semibold text-sm">{currentCourse.title}</h2>
-                <p className="text-slate-400 text-xs">Page {currentPage} of {currentCourse.totalPages}</p>
+                <h2 className="text-white font-semibold text-sm">{activeModule?.title || course.title}</h2>
+                <p className="text-slate-400 text-xs">{course.title}</p>
               </div>
             </div>
             <button
               onClick={toggleFullscreen}
-              className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition"
+              className="w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition pointer-events-auto"
             >
               <X className="w-5 h-5 text-white" />
             </button>
           </div>
-
-          {/* Fullscreen PDF Content */}
-          <div className="flex-1 overflow-auto bg-slate-800 flex items-center justify-center p-8">
-            <div 
-              className="bg-white shadow-2xl rounded-lg overflow-hidden"
-              style={{ 
-                width: `${zoom}%`, 
-                maxWidth: '100%',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div className="w-full aspect-[8.5/11] flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-12">
-                <FileText className="w-24 h-24 text-indigo-400 mb-6" />
-                <h3 className="text-2xl font-bold text-slate-700 mb-3">{currentCourse.title}</h3>
-                <p className="text-lg text-slate-500 mb-4">Page {currentPage} of {currentCourse.totalPages}</p>
-                <div className="mt-8 space-y-3 w-full max-w-2xl">
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-4/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-3/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
-                </div>
-                <p className="text-sm text-slate-400 mt-12">
-                  Replace with actual PDF embed or viewer
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Fullscreen Controls */}
-          <div className="bg-slate-900 px-6 py-4 border-t border-slate-700 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Page Navigation */}
-              <button 
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-                className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-5 h-5 text-white" />
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={currentPage}
-                  onChange={(e) => {
-                    const page = parseInt(e.target.value);
-                    if (page >= 1 && page <= currentCourse.totalPages) {
-                      setCurrentPage(page);
-                    }
-                  }}
-                  className="w-16 px-3 py-2 text-sm text-center bg-slate-800 text-white border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <span className="text-sm text-slate-400">/ {currentCourse.totalPages}</span>
-              </div>
-
-              <button 
-                onClick={handleNextPage}
-                disabled={currentPage === currentCourse.totalPages}
-                className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Zoom Controls */}
-              <button 
-                onClick={handleZoomOut}
-                className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition"
-              >
-                <ZoomOut className="w-5 h-5 text-white" />
-              </button>
-              <span className="text-sm text-white w-16 text-center font-medium">{zoom}%</span>
-              <button 
-                onClick={handleZoomIn}
-                className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition"
-              >
-                <ZoomIn className="w-5 h-5 text-white" />
-              </button>
-
-              <div className="w-px h-8 bg-slate-700 mx-2"></div>
-
-              {/* Action Buttons */}
-              <button className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
-                <Printer className="w-5 h-5 text-white" />
-              </button>
-              <button className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
-                <Download className="w-5 h-5 text-white" />
-              </button>
-              <button 
-                onClick={toggleFullscreen}
-                className="w-10 h-10 rounded-lg bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center transition"
-              >
-                <Minimize className="w-5 h-5 text-white" />
-              </button>
-            </div>
+          <div className="flex-1 w-full h-full pt-14">
+            <iframe
+              src={currentPdfUrl}
+              className="w-full h-full border-none"
+              sandbox="allow-scripts allow-same-origin"
+              title={activeModule?.title || course.title}
+            />
           </div>
         </div>
       )}
 
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-4 items-start flex-col lg:flex-row">
 
         {/* ── Left Column ───────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
+        <div className="flex-1 flex flex-col gap-4 min-w-0 w-full">
 
-          {/* PDF Viewer */}
-          <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
-            {/* PDF Display Area */}
-            <div className="relative bg-slate-100" style={{ paddingBottom: "70%" }}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                {/* PDF Preview/Placeholder */}
-                <div 
-                  className="bg-white rounded-lg overflow-hidden"
-                  style={{ 
-                    width: `${zoom}%`, 
-                    height: `${zoom}%`,
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-                    <FileText className="w-20 h-20 text-indigo-400 mb-4" />
-                    <h3 className="text-lg font-bold text-slate-700 mb-2">{currentCourse.title}</h3>
-                    <p className="text-sm text-slate-500">Page {currentPage} of {currentCourse.totalPages}</p>
-                    <div className="mt-6 space-y-2 w-full max-w-md">
-                      <div className="h-2 bg-slate-200 rounded-full w-full"></div>
-                      <div className="h-2 bg-slate-200 rounded-full w-5/6"></div>
-                      <div className="h-2 bg-slate-200 rounded-full w-4/6"></div>
-                      <div className="h-2 bg-slate-200 rounded-full w-full"></div>
-                      <div className="h-2 bg-slate-200 rounded-full w-3/6"></div>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-8">
-                      Replace with actual PDF embed or viewer
-                    </p>
-                  </div>
-                </div>
+          {/* Reader Header Actions */}
+          <div className="flex items-center justify-between bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100">
+            <button onClick={() => router.back()} className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition flex items-center gap-2">
+              <X className="w-4 h-4" /> Exit Reader
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Progress</span>
+              <div className="w-32">
+                <ProgressBar value={percentComplete} />
               </div>
+              <span className="text-sm font-bold text-indigo-600">{percentComplete}%</span>
+            </div>
+          </div>
 
-              {/* Top Right Menu */}
+          {/* PDF Reader */}
+          <div className="bg-slate-100 rounded-2xl overflow-hidden shadow-xl border border-slate-200 relative h-[650px]">
+            {currentPdfUrl ? (
+              <iframe
+                src={currentPdfUrl}
+                className="absolute inset-0 w-full h-full border-none"
+                sandbox="allow-scripts allow-same-origin"
+                title={activeModule?.title || course.title}
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 gap-3">
+                <FileText className="w-12 h-12 text-slate-300" />
+                <p className="text-slate-400 font-medium">No document attached to this material yet.</p>
+              </div>
+            )}
+            
+            {/* Custom Fullscreen Overlay Button */}
+            {currentPdfUrl && (
               <button 
-                className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-slate-50 transition shadow-md"
-                onClick={(e) => e.stopPropagation()}
+                onClick={toggleFullscreen}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-slate-800/60 hover:bg-slate-800/90 backdrop-blur-md rounded-xl flex items-center justify-center transition shadow-lg"
               >
-                <MoreVertical className="w-4 h-4 text-slate-600" />
+                <Maximize className="w-5 h-5 text-white" />
               </button>
+            )}
+          </div>
+
+          {/* Next Action Bar */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="font-bold text-slate-800 text-lg">{activeModule?.title || course.title || "Document"}</h2>
+              <p className="text-slate-500 text-sm">Part of: {course.title}</p>
             </div>
-
-            {/* PDF Controls */}
-            <div className="bg-white px-4 py-3 border-t border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {/* Page Navigation */}
-                <button 
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-4 h-4 text-slate-600" />
-                </button>
-                
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={currentPage}
-                    onChange={(e) => {
-                      const page = parseInt(e.target.value);
-                      if (page >= 1 && page <= currentCourse.totalPages) {
-                        setCurrentPage(page);
-                      }
-                    }}
-                    className="w-14 px-2 py-1 text-sm text-center border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                  />
-                  <span className="text-sm text-slate-500">/ {currentCourse.totalPages}</span>
-                </div>
-
-                <button 
-                  onClick={handleNextPage}
-                  disabled={currentPage === currentCourse.totalPages}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-4 h-4 text-slate-600" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Zoom Controls */}
-                <button 
-                  onClick={handleZoomOut}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition"
-                >
-                  <ZoomOut className="w-4 h-4 text-slate-600" />
-                </button>
-                <span className="text-sm text-slate-600 w-12 text-center">{zoom}%</span>
-                <button 
-                  onClick={handleZoomIn}
-                  className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition"
-                >
-                  <ZoomIn className="w-4 h-4 text-slate-600" />
-                </button>
-
-                <div className="w-px h-6 bg-slate-200 mx-1"></div>
-
-                {/* Action Buttons */}
-                <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
-                  <Printer className="w-4 h-4 text-slate-600" />
-                </button>
-                <button className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition">
-                  <Download className="w-4 h-4 text-slate-600" />
-                </button>
-                <button 
-                  onClick={toggleFullscreen}
-                  className="w-8 h-8 rounded-lg border border-indigo-200 bg-indigo-50 flex items-center justify-center hover:bg-indigo-100 transition"
-                  title="Fullscreen"
-                >
-                  <Maximize className="w-4 h-4 text-indigo-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="px-4 py-2 bg-slate-50 border-t border-slate-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-slate-500">Reading Progress</span>
-                <span className="text-xs font-semibold text-indigo-600">{currentCourse.percent}%</span>
-              </div>
-              <ProgressBar value={currentCourse.percent} />
-            </div>
+            <button
+              onClick={handleMarkComplete}
+              disabled={updatingProgress || (!activeModule && modules.length > 0)}
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white font-bold rounded-xl shadow-lg shadow-emerald-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {updatingProgress ? (
+                <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ) : (
+                <CheckCircle className="w-5 h-5" />
+              )}
+              {updatingProgress ? "Updating..." : "Mark as Read"}
+            </button>
           </div>
 
           {/* Course Info */}
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
 
+            {/*  Title + Instructor side by side */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img
-                  src={currentCourse.instructorAvatar}
-                  alt={currentCourse.instructor}
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-indigo-100 shadow-sm"
-                />
+                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg border-2 border-indigo-200 shadow-sm flex-shrink-0">
+                  {instructorName.charAt(0)}
+                </div>
                 <div>
                   <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                    {currentCourse.title}
+                    {course.title}
                   </h1>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs font-semibold text-indigo-600">
-                      {currentCourse.instructor}
+                      {instructorName}
                     </span>
                     <span className="text-slate-300 text-xs">·</span>
-                    <span className="text-xs text-slate-400">{currentCourse.updated}</span>
+                    <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">{course.type}</span>
                   </div>
                 </div>
               </div>
-              <StarRating rating={currentCourse.rating} />
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-              <span className="font-medium">{currentCourse.pages} Pages</span>
-              <span className="text-slate-300">·</span>
-              <span>{currentCourse.lessons} Lessons</span>
-              <span className="text-slate-300">·</span>
-              <span className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5" fill="#f59e0b" stroke="#f59e0b" />
-                {currentCourse.percent}%
-              </span>
-              <span className="text-slate-300">·</span>
-              <span className="flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5 text-indigo-400" fill="#818cf8" />
-                {currentCourse.completedPages} / {currentCourse.totalPages} Pages
-              </span>
-              <span className="text-slate-300">·</span>
-              <button className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 transition">
-                <ThumbsUp className="w-3.5 h-3.5" />
-                {currentCourse.likes}
-              </button>
-              <button className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 transition">
-                <Share2 className="w-3.5 h-3.5" />
-                {currentCourse.shares} Share
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1 border-b border-slate-100 pb-2">
-              {["Description", "Comments", "Attachment"].map((tab) => (
+            {/* Tabs */}
+            <div className="flex items-center gap-1 border-b border-slate-100 pb-2 mt-2">
+              {["Description", "Comments"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -693,103 +362,98 @@ export default function CourseReaderPage() {
                   )}
                 </button>
               ))}
-
-              <div className="ml-auto flex items-center gap-2">
-                <div className="flex items-center gap-1 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  <span>Sort by :</span>
-                  <span className="font-medium ml-1">Recent</span>
-                  <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-                </div>
-                <button className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-xl hover:bg-slate-50 transition">
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share
-                </button>
-              </div>
             </div>
 
+            {/* Tab Content */}
             {activeTab === "Description" && (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {currentCourse.description}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {currentCourse.tags && currentCourse.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+              <div className="flex flex-col gap-4 py-2">
+                <div>
+                  <h3 className="font-bold text-slate-800 mb-1 text-sm">Document Description</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {activeModule?.description || "No description provided for this reading material."}
+                  </p>
+                </div>
+                <div className="w-full h-px bg-slate-100" />
+                <div>
+                  <h3 className="font-bold text-slate-800 mb-1 text-sm">Course Overview</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    {course.description}
+                  </p>
                 </div>
               </div>
             )}
 
             {activeTab === "Comments" && (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 py-2">
                 <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80"
-                    alt="you"
-                    className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50">
+                  <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 text-sm">
+                    U
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all">
                     <input
                       type="text"
-                      placeholder="Add a comment..."
+                      placeholder="Add a comment or ask a question..."
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-                      className="flex-1 text-sm bg-transparent focus:outline-none placeholder-slate-400"
+                      className="flex-1 text-sm bg-transparent focus:outline-none placeholder-slate-400 text-slate-700"
                     />
                     <button 
-                      className="text-slate-400 hover:text-slate-600 transition"
+                      className="text-indigo-600 hover:text-indigo-700 font-bold text-sm transition"
                       onClick={handleAddComment}
                     >
-                      <Smile className="w-4 h-4" />
+                      Post
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  {allComments.map((c) => (
-                    <CommentItem key={c.id} comment={c} />
-                  ))}
+                <div className="flex flex-col gap-4 mt-2">
+                  {allComments.length > 0 ? allComments.map((c) => (
+                    <div key={c.id} className="flex gap-3">
+                       <img src={c.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                       <div>
+                         <div className="flex items-baseline gap-2">
+                           <span className="font-bold text-sm text-slate-800">{c.name}</span>
+                           <span className="text-xs text-slate-400">{c.time}</span>
+                         </div>
+                         <p className="text-sm text-slate-600 mt-0.5">{c.text}</p>
+                       </div>
+                    </div>
+                  )) : (
+                    <p className="text-sm text-slate-400 text-center py-4">No comments yet. Be the first to start the discussion!</p>
+                  )}
                 </div>
               </div>
             )}
-
-            {activeTab === "Attachment" && (
-              <div className="flex flex-col gap-3 py-6">
-                <div className="flex items-center gap-3 p-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition cursor-pointer">
-                  <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-800">{currentCourse.title}.pdf</p>
-                    <p className="text-xs text-slate-400">{currentCourse.pages} pages · 12.5 MB</p>
-                  </div>
-                  <button className="text-indigo-600 hover:text-indigo-700 transition">
-                    <Download className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            )}
-            
           </div>
         </div>
 
         {/* ── Right Column ──────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-3">
-          <h2 className="font-bold text-slate-800 text-base">Course Modules</h2>
-          {relatedCourses.map((course) => (
-            <RelatedCourseCard 
-              key={course.id} 
-              course={course}
-              isActive={course.id === activeCourseId}
-              onSelect={() => handleCourseSelect(course.id)}
-            />
-          ))}
+        <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-3">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
+            <h2 className="font-bold text-slate-800 text-base flex items-center justify-between">
+              Reading Materials
+              <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                {completedCount}/{totalCount}
+              </span>
+            </h2>
+            <div className="flex flex-col gap-2 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+              {modules.length > 0 ? modules.map((mod, index) => {
+                const isCompleted = index < completedCount;
+                return (
+                  <ModuleItem 
+                    key={mod.id} 
+                    module={mod}
+                    isActive={activeModule?.id === mod.id}
+                    isCompleted={isCompleted}
+                    onSelect={() => handleModuleSelect(mod)}
+                  />
+                )
+              }) : (
+                <p className="text-sm text-slate-400 py-4 text-center">No modules found.</p>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>

@@ -394,33 +394,44 @@ export default function CourseReaderPage() {
           </div>
 
           {/* Fullscreen PDF Content */}
-          <div className="flex-1 overflow-auto bg-slate-800 flex items-center justify-center p-8">
-            <div 
-              className="bg-white shadow-2xl rounded-lg overflow-hidden"
-              style={{ 
-                width: `${zoom}%`, 
-                maxWidth: '100%',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div className="w-full aspect-[8.5/11] flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-12">
-                <FileText className="w-24 h-24 text-indigo-400 mb-6" />
-                <h3 className="text-2xl font-bold text-slate-700 mb-3">{currentCourse.title}</h3>
-                <p className="text-lg text-slate-500 mb-4">Page {currentPage} of {currentCourse.totalPages}</p>
-                <div className="mt-8 space-y-3 w-full max-w-2xl">
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-4/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-3/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
-                  <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+          <div className="flex-1 overflow-hidden bg-slate-800 flex items-center justify-center w-full h-full relative">
+            {currentCourse.signedPdfUrl ? (
+              <iframe
+                src={currentCourse.signedPdfUrl + '#toolbar=0'}
+                className="w-full h-full border-0"
+                sandbox="allow-same-origin allow-scripts"
+                title={currentCourse.title}
+              />
+            ) : (
+              <div className="flex-1 overflow-auto bg-slate-800 flex items-center justify-center p-8 w-full">
+                <div 
+                  className="bg-white shadow-2xl rounded-lg overflow-hidden"
+                  style={{ 
+                    width: `${zoom}%`, 
+                    maxWidth: '100%',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <div className="w-full aspect-[8.5/11] flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-12">
+                    <FileText className="w-24 h-24 text-indigo-400 mb-6" />
+                    <h3 className="text-2xl font-bold text-slate-700 mb-3">{currentCourse.title}</h3>
+                    <p className="text-lg text-slate-500 mb-4">Page {currentPage} of {currentCourse.totalPages}</p>
+                    <div className="mt-8 space-y-3 w-full max-w-2xl">
+                      <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-4/6"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-3/6"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-5/6"></div>
+                      <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+                    </div>
+                    <p className="text-sm text-slate-400 mt-12">
+                      PDF preview mockup
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-400 mt-12">
-                  Replace with actual PDF embed or viewer
-                </p>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Fullscreen Controls */}

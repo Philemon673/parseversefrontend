@@ -10,8 +10,8 @@ export default function StatCard({ label, value, growth, growthColor, icon: Icon
           </p>
         )}
       </div>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${iconBg}`}>
-        <IconComponent className={`w-7 h-7 ${iconColor}`} />
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${iconBg || ""}`}>
+        {IconComponent && <IconComponent className={`w-7 h-7 ${iconColor}`} />}
       </div>
     </div>
   );

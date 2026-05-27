@@ -2,7 +2,7 @@
 import SearchBar from "../../../student-component/searchBar"
 import Post1 from "@/assets/post1.jpg";
 import Post2 from "@/assets/post2.jpg";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Heart,
@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import ScrollToTop from "../../../screens/scroll";
+import { getMyEnrolledCourses } from "../../../lib/courseService";
+import { useAuth } from "@/lib/auth-context";
+import { BookOpen, Award, Clock } from "lucide-react";
 
 const posts = [
   {
@@ -422,20 +425,217 @@ function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
 
 
 
-export default function PostsSection() {
+// ── Student Dashboard Overview Widgets ───────────────────────────────────────
+
+function WelcomeBanner({ name }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
   return (
-    <div className="flex flex-col gap-5 w-full pb-10">
-      <SearchBar />
-      <div className="flex flex-col gap-6">
-        <LiveSessionAlert />
-        
-      </div>
-      <ScrollToTop />
+    <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-[2rem] p-6 shadow-xl mb-2 text-white border border-white/10">
+      {/* Decorative Blur Spheres */}
+      <div className="absolute top-[-30%] right-[-10%] w-60 h-60 bg-white/10 rounded-full blur-2xl" />
+      <div className="absolute bottom-[-20%] left-[-10%] w-40 h-40 bg-pink-500/20 rounded-full blur-xl" />
       
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-      <VideoCard post={videoPost} />
+      <div className="relative z-10 flex flex-col gap-1">
+        <h2 className="text-2xl font-black tracking-tight">{greeting}, {name || "Scholar"}! 👋</h2>
+        <p className="text-purple-100 text-xs mt-0.5 max-w-md leading-relaxed">
+          Welcome back to ParseVerse! Ready to continue your learning journey? Monitor your stats and jump right back in below.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, colorClass, bgClass }) {
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300 flex-1 min-w-[140px]">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${bgClass}`}>
+        <Icon className={`w-5 h-5 ${colorClass}`} />
+      </div>
+      <div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className="text-lg font-black text-slate-800 mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function ResumeCard({ enrollment }) {
+  const router = useRouter();
+  if (!enrollment) return null;
+  const { course, progress } = enrollment;
+  const totalLessons = course._count?.modules || 1;
+  const completedLessons = progress?.completedLessons || 0;
+  const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+  return (
+    <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col gap-4 hover:shadow-md transition-all duration-300">
+      <div className="flex items-center justify-between">
+        <h3 className="font-black text-slate-850 text-sm">Resume Learning</h3>
+        <span className="text-[10px] bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-bold">
+          Last Active
+        </span>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0 font-black text-indigo-600 text-lg shadow-sm">
+          {course.title ? course.title.charAt(0) : "C"}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4 className="font-bold text-slate-800 text-xs truncate leading-snug">{course.title}</h4>
+          <p className="text-[10px] text-slate-400 mt-0.5">by {course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : "Instructor"}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5 mt-1">
+        <div className="flex justify-between items-center text-[11px]">
+          <span className="text-slate-500 font-bold">Progress</span>
+          <span className="text-indigo-600 font-extrabold">{percent}% Completed</span>
+        </div>
+        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: `${percent}%` }} />
+        </div>
+        <span className="text-[10px] text-slate-400 font-medium">{completedLessons} of {totalLessons} modules completed</span>
+      </div>
+
+      <button
+        onClick={() => {
+          const url = course.type === "Hardcopy"
+            ? `/student-dashboard/coursedetails/courses/hardcopy?courseId=${course.id}`
+            : `/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`;
+          router.push(url);
+        }}
+        className="w-full py-3 rounded-xl bg-indigo-650 text-white font-bold text-[11px] hover:bg-indigo-700 transition flex items-center justify-center gap-2 mt-1 shadow-lg shadow-indigo-150"
+      >
+        <Play className="w-3.5 h-3.5 fill-white" /> Resume Now
+      </button>
+    </div>
+  );
+}
+
+function ScheduleWidget() {
+  const schedules = [
+    { title: "React 19 Deep Dive", time: "Today, 4:00 PM", tutor: "John Smiga", status: "Live Soon" },
+    { title: "Python Algorithm Q&A", time: "Tomorrow, 2:00 PM", tutor: "Mashok Khan", status: "Scheduled" },
+  ];
+
+  return (
+    <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm flex flex-col gap-4">
+      <h3 className="font-black text-slate-800 text-sm">Upcoming Sessions</h3>
+      <div className="flex flex-col gap-3">
+        {schedules.map((s, idx) => (
+          <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5 relative overflow-hidden group hover:border-indigo-300 hover:bg-indigo-50/20 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${s.status === "Live Soon" ? "bg-red-100 text-red-600" : "bg-slate-200 text-slate-600"}`}>
+                {s.status}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold">{s.time}</span>
+            </div>
+            <h4 className="font-bold text-slate-800 text-xs leading-snug group-hover:text-indigo-600 transition-colors">{s.title}</h4>
+            <p className="text-[10px] text-slate-400 font-medium">Tutor: <span className="text-slate-600 font-bold">{s.tutor}</span></p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function PostsSection() {
+  const { user } = useAuth();
+  const [enrollments, setEnrollments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await getMyEnrolledCourses();
+        setEnrollments(Array.isArray(res) ? res : []);
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
+  const totalEnrolled = enrollments.length;
+  const completed = enrollments.filter(e => {
+    const total = e.course._count?.modules || 1;
+    const completedCount = e.progress?.completedLessons || 0;
+    return completedCount >= total;
+  }).length;
+  const inProgress = totalEnrolled - completed;
+
+  // Get the most recently active in-progress course
+  const activeCourse = enrollments.find(e => {
+    const total = e.course._count?.modules || 1;
+    const completedCount = e.progress?.completedLessons || 0;
+    return completedCount < total;
+  });
+
+  return (
+    <div className="flex flex-col gap-6 w-full pb-10">
+      <SearchBar />
+      
+      {/* Dynamic Welcome Banner */}
+      <WelcomeBanner name={user?.name} />
+
+      {/* Grid Layout containing Main Dashboard and Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+        
+        {/* Left Column: Dashboard stats, resume learning, and social feed (7 columns) */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          
+          {/* Stats Cards Row */}
+          <div className="flex flex-wrap gap-4">
+            <StatCard 
+              label="Enrolled Courses" 
+              value={loading ? "..." : String(totalEnrolled)} 
+              icon={BookOpen} 
+              colorClass="text-indigo-600" 
+              bgClass="bg-indigo-50 border border-indigo-100" 
+            />
+            <StatCard 
+              label="In Progress" 
+              value={loading ? "..." : String(inProgress)} 
+              icon={Clock} 
+              colorClass="text-purple-600" 
+              bgClass="bg-purple-50 border border-purple-100" 
+            />
+            <StatCard 
+              label="Certificates" 
+              value={loading ? "..." : String(completed)} 
+              icon={Award} 
+              colorClass="text-pink-600" 
+              bgClass="bg-pink-50 border border-pink-100" 
+            />
+          </div>
+
+          {/* Resume Learning Card if there is an active course */}
+          {!loading && activeCourse && (
+            <ResumeCard enrollment={activeCourse} />
+          )}
+
+          {/* Social Feed Posts */}
+          <div className="flex flex-col gap-6 mt-2">
+            <h3 className="font-black text-slate-800 text-sm px-1">Community Feed</h3>
+            
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+            <VideoCard post={videoPost} />
+          </div>
+        </div>
+
+        {/* Right Column: Live Session alerts & Upcoming schedule (3 columns) */}
+        <div className="lg:col-span-3 flex flex-col gap-6">
+          <LiveSessionAlert />
+          <ScheduleWidget />
+        </div>
+
+      </div>
+
+      <ScrollToTop />
     </div>
   );
 } 

@@ -29,6 +29,18 @@ export default function CourseUploadForm({ onSubmit }) {
   const [price, setPrice] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   
+  // Derivations
+  const isMultiple = courseStructure.includes("Multiple");
+  const isFree = !price || parseFloat(price) === 0;
+  const submitLabel = isMultiple ? "Create Course →" : "Publish Course";
+
+  function getStructureOptions(cat) {
+    if (cat === "Video") return ["Single Video", "Multiple Videos"];
+    if (cat === "Hardcopy") return ["Hardcopy", "Multiple Hardcopy"];
+    return [];
+  }
+  const structureOptions = getStructureOptions(category);
+  
   // File states
   const [courseFile, setCourseFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -199,7 +211,7 @@ export default function CourseUploadForm({ onSubmit }) {
       return;
     }
 
-    if (!courseFile) {
+    if (!isMultiple && !courseFile) {
       alert("Please upload a course file");
       return;
     }
@@ -225,8 +237,10 @@ export default function CourseUploadForm({ onSubmit }) {
       description: courseDesc,
       category,
       structure: courseStructure,
-      price: `${CURRENCY_SYMBOL}${price}`,
-      courseFile,
+      price: price || "0",
+      isFree,
+      isMultiple,
+      courseFile: isMultiple ? null : courseFile,
       thumbnailFile,
       formData // Include FormData for backend upload
     });
@@ -285,18 +299,26 @@ export default function CourseUploadForm({ onSubmit }) {
             
             {/* Course File Upload */}
             <div>
-              <input
-                ref={courseFileInputRef}
-                type="file"
-                accept="video/*,.pdf,.doc,.docx,.epub"
-                onChange={handleCourseFileChange}
-                className="hidden"
-                id="courseFileInput"
-              />
-              
-              {!courseFile ? (
-                <label
-                  htmlFor="courseFileInput"
+              {isMultiple ? (
+                <div className="w-56 h-[178px] border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 p-4 text-center bg-gray-50">
+                  <List className="w-6 h-6 text-indigo-400" />
+                  <p className="text-sm font-medium text-gray-700">Multiple Modules</p>
+                  <p className="text-xs text-gray-500">You will upload course files module by module after creating this course shell.</p>
+                </div>
+              ) : (
+                <>
+                  <input
+                    ref={courseFileInputRef}
+                    type="file"
+                    accept={category === "Video" ? "video/*" : ".pdf,.doc,.docx,.epub"}
+                    onChange={handleCourseFileChange}
+                    className="hidden"
+                    id="courseFileInput"
+                  />
+                  
+                  {!courseFile ? (
+                    <label
+                      htmlFor="courseFileInput"
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={handleCourseFileDrop}
@@ -349,6 +371,8 @@ export default function CourseUploadForm({ onSubmit }) {
                     />
                   )}
                 </div>
+              )}
+              </>
               )}
             </div>
 
@@ -426,7 +450,7 @@ export default function CourseUploadForm({ onSubmit }) {
                     className="w-full appearance-none px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700"
                   >
                     <option value="">Select structure</option>
-                    {structure.map((c) => (
+                    {structureOptions.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
@@ -480,7 +504,12 @@ export default function CourseUploadForm({ onSubmit }) {
                   <div className="relative">
                     <select
                       value={category}
-                      onChange={(e) => setCategory(e.target.value)}
+                      onChange={(e) => {
+                        setCategory(e.target.value);
+                        setCourseStructure("");
+                        setCourseFile(null);
+                        setCourseFilePreview(null);
+                      }}
                       required
                       className="w-full appearance-none px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700"
                     >
@@ -494,8 +523,9 @@ export default function CourseUploadForm({ onSubmit }) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Price ({CURRENCY_SYMBOL}) 
+                  <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
+                    <span>Price ({CURRENCY_SYMBOL})</span>
+                    {isFree && <span className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded-sm">FREE</span>}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
@@ -504,7 +534,6 @@ export default function CourseUploadForm({ onSubmit }) {
                     <input
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      required
                       className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700"
                       type="number"
                       min="0"
@@ -518,7 +547,7 @@ export default function CourseUploadForm({ onSubmit }) {
                   type="submit"
                   className="w-full py-2.5 bg-indigo-600 text-center text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition"
                 >
-                  Publish Course
+                  {submitLabel}
                 </button>
               </div>
             </div>

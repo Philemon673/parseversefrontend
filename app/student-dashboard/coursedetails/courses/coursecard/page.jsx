@@ -20,6 +20,7 @@ function StarRating({ rating }) {
 }
 
 export default function CourseCard({ course, onPublish }) {
+  if (!course) return null;
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
       <div className="relative w-full h-36 flex-shrink-0">

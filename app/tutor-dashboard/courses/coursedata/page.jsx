@@ -110,3 +110,7 @@ export const uploadSteps = [
   { num: 4, label: "Pricing", active: false },
   { num: 5, label: "Publish", active: false },
 ];
+
+export default function DummyCourseDataPage() {
+  return null;
+}

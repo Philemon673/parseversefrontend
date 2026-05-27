@@ -1,19 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { Camera, ChevronRight, Trash2, HelpCircle, Users, UserPlus, BadgeCheck, BookOpen, MessageCircle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Country, State } from "country-state-city";
+import {
+  Camera, ChevronRight, Trash2, HelpCircle, Users, UserPlus, BadgeCheck,
+  BookOpen, MessageCircle, Edit3, Check, X, User, Mail, MapPin,
+  Building2, Map, Globe, Tags, Sparkles, Plus, Phone,
+} from "lucide-react";
+import { userService } from "@/lib/userService";
 
-// ── Tab content components ─────────────────────────────────────────────────
-// Place DetailsTab, ResourcesTab, SchedulesTab, PaymentTab in the same folder
-// and adjust the import paths to match your project structure.
 import DetailsTab from "./details";
 import ResourcesTab from "./resources";
 import SchedulesTab from "./schedule";
 import PaymentTab from "./payment";
 
+// ── Pre-load all countries once ──────────────────────────────────────────────
+const ALL_COUNTRIES = Country.getAllCountries(); // [{ name, isoCode, phonecode, flag, ... }]
+
 const TABS = ["Personal Details", "Details", "Resources", "Schedules", "Payment"];
 
-// ── Left-panel icon helpers ────────────────────────────────────────────────
+// ── Icon helpers ─────────────────────────────────────────────────────────────
 function CrownIcon() {
   return (
     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
@@ -78,38 +84,203 @@ const supportItems = [
   { icon: <Trash2 className="w-4 h-4 text-white" />, label: "Delete Account", danger: true },
 ];
 
-// ── Personal Details form (inline in main file) ────────────────────────────
-function PersonalDetailsTab({ avatarSrc, onAvatarChange }) {
+// ── PersonalDetailsTab ───────────────────────────────────────────────────────
+function PersonalDetailsTab({ user, isLoading, onProfileUpdate, avatarSrc, onAvatarChange }) {
+  const defaultCountry = ALL_COUNTRIES.find((c) => c.isoCode === "CM");
+
   const [form, setForm] = useState({
-    fullName: "Ekonde Roland",
-    email: "hellopixiency@gmail.com",
-    address: "127 Gobadia chittagong, Bangladesh",
-    city: "Chittagong",
-    state: "Chittagong",
-    zip: "3200",
-    country: "Bangladesh",
+    fullName: "",
+    email: "",
+    address: "",
+    city: "",
+    countryCode: "CM",
+    country: "Cameroon",
+    dialCode: "237",
+    state: "",
+    interests: [],
+    phoneNumber: "",
   });
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ ...form, interests: [] });
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [newTag, setNewTag] = useState("");
 
-  const update = (key) =>
-    (e) =>
-      setForm((f) => ({ ...f, [key]: e.target.value }));
+  // ── Sync form & draft when user data loads or changes ──
+  useEffect(() => {
+    if (user) {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+      // Resolve country object — try by name first, then isoCode, then fall back to Cameroon
+      const countryObj =
+        ALL_COUNTRIES.find((c) => c.name === user.country) ||
+        ALL_COUNTRIES.find((c) => c.isoCode === user.country) ||
+        defaultCountry;
+
+      const newForm = {
+        fullName,
+        email: user.email || "",
+        address: user.address || "",
+        city: user.city || "",
+        countryCode: countryObj?.isoCode || "CM",
+        country: countryObj?.name || user.country || "Cameroon",
+        dialCode: countryObj?.phonecode || "237",
+        state: user.state || "",
+        interests: user.interests || [],
+        // ✅ Fixed: read the correct key from the API response
+        phoneNumber: user.phoneNumber || user.phone || "",
+      };
+
+      setForm(newForm);
+      setDraft({ ...newForm, interests: [...newForm.interests] });
+    }
+  }, [user]);
+
+  // ── Derive state list from draft's active countryCode ──
+  const stateList = useMemo(
+    () => State.getStatesOfCountry(draft.countryCode),
+    [draft.countryCode]
+  );
+
+  // ── Generic draft field updater ──
+  const updateDraft = (key) => (e) =>
+    setDraft((d) => ({ ...d, [key]: e.target.value }));
+
+  // ── Country change: update isoCode, name, dialCode, and reset state ──
+  const handleCountryChange = (e) => {
+    const isoCode = e.target.value;
+    const countryObj = ALL_COUNTRIES.find((c) => c.isoCode === isoCode);
+    setDraft((d) => ({
+      ...d,
+      countryCode: isoCode,
+      country: countryObj?.name ?? isoCode,
+      // ✅ Auto-update dial code when country changes
+      dialCode: countryObj?.phonecode || "",
+      state: "",
+    }));
   };
 
+  // ── Interest tag helpers ──
+  const addInterest = () => {
+    const val = newTag.trim();
+    if (val && !draft.interests.includes(val)) {
+      setDraft((d) => ({ ...d, interests: [...d.interests, val] }));
+    }
+    setNewTag("");
+  };
+
+  const removeInterest = (index) =>
+    setDraft((d) => ({
+      ...d,
+      interests: d.interests.filter((_, i) => i !== index),
+    }));
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addInterest();
+    }
+  };
+
+  // ── Edit / Save / Cancel ──
+  const handleEdit = () => {
+    setDraft({ ...form, interests: [...form.interests] });
+    setErrorMsg("");
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setErrorMsg("");
+    try {
+      const nameParts = draft.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      const updated = await userService.updateUserProfile(user?.id, {
+        firstName,
+        lastName,
+        email: draft.email,
+        address: draft.address,
+        city: draft.city,
+        country: draft.country,
+        state: draft.state,
+        interests: draft.interests,
+        // Fixed: send phone to backend API which expects the 'phone' field
+        phone: draft.phoneNumber,
+      });
+
+      if (updated) {
+        onProfileUpdate(updated);
+        setEditing(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      setErrorMsg(err.message || "Failed to save profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setDraft({ ...form, interests: [...form.interests] });
+    setErrorMsg("");
+    setEditing(false);
+    setNewTag("");
+  };
+
+  // ── Shared style helpers ──
+  const cardCls = "bg-[#F4F5FB] rounded-2xl p-4 flex items-start gap-3";
+  const iconWrapCls = "w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0";
+  const fieldLabelCls = "text-xs text-gray-400 mb-0.5";
+  const fieldValueCls = "text-sm font-semibold text-gray-800";
+  const inputCls = "w-full bg-white border border-indigo-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 mt-0.5";
+  const selectCls = "w-full bg-white border border-indigo-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 mt-0.5";
+
+  const displayInterests = editing ? draft.interests : form.interests;
+
+  const getInitials = () => {
+    if (!form.fullName) return "PV";
+    const parts = form.fullName.trim().split(/\s+/);
+    const first = parts[0] ? parts[0].charAt(0) : "";
+    const last = parts[1] ? parts[1].charAt(0) : "";
+    return (first + last).toUpperCase() || "PV";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+        <p className="text-sm text-gray-500 font-medium">Loading profile details...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex gap-4">
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <div className="relative w-24 h-28 rounded-xl overflow-hidden bg-gray-100">
+    <div className="flex flex-col gap-4">
+      {errorMsg && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={() => setErrorMsg("")} className="text-red-500 hover:text-red-700">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Top row: Avatar + Name/Email + Edit button ── */}
+      <div className="flex items-start gap-4">
+
+        {/* Avatar */}
+        <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-200 to-purple-300 flex-shrink-0">
           {avatarSrc ? (
             <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-indigo-200 to-purple-200 flex items-center justify-center text-2xl font-bold text-white select-none">
-              ER
+            <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-white select-none">
+              {getInitials()}
             </div>
           )}
           <label className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-white/80 flex items-center justify-center shadow cursor-pointer hover:bg-white transition">
@@ -117,171 +288,362 @@ function PersonalDetailsTab({ avatarSrc, onAvatarChange }) {
             <input type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
           </label>
         </div>
-      </div>
 
-      {/* Form */}
-      <div className="flex-1 flex flex-col gap-3">
-        {/* Row 1 */}
-        <div className="flex gap-3">
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">Full Name</label>
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={update("fullName")}
-              className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-            />
+        {/* Name + Email */}
+        <div className="flex-1 flex flex-col gap-3">
+          <div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-0.5">
+              <User className="w-3.5 h-3.5" /> Full Name
+            </div>
+            {editing ? (
+              <input type="text" value={draft.fullName} onChange={updateDraft("fullName")} className={inputCls} />
+            ) : (
+              <p className="text-xl font-bold text-gray-800">{form.fullName}</p>
+            )}
           </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">Email address</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={update("email")}
-              className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-            />
+
+          <div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-0.5">
+              <Mail className="w-3.5 h-3.5" /> Email Address
+            </div>
+            {editing ? (
+              <input type="email" value={draft.email} onChange={updateDraft("email")} className={inputCls} />
+            ) : (
+              <p className="text-sm font-semibold text-gray-800">{form.email}</p>
+            )}
           </div>
         </div>
 
-        {/* Row 2 */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-700">Address</label>
-          <input
-            type="text"
-            value={form.address}
-            onChange={update("address")}
-            className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-          />
-        </div>
-
-        {/* Row 3 */}
-        <div className="flex gap-3">
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">City</label>
-            <select
-              value={form.city}
-              onChange={update("city")}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white"
-            >
-              {["Chittagong", "Dhaka", "Sylhet"].map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">State / Province</label>
-            <select
-              value={form.state}
-              onChange={update("state")}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white"
-            >
-              {["Chittagong", "Dhaka"].map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* Row 4 */}
-        <div className="flex gap-3">
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">Zip Code</label>
-            <input
-              type="text"
-              value={form.zip}
-              onChange={update("zip")}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-            />
-          </div>
-          <div className="flex-1 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-700">Country</label>
-            <select
-              value={form.country}
-              onChange={update("country")}
-              className="px-4 py-2 rounded-xl border border-gray-200 bg-[#F8FAFC] text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white"
-            >
-              {["Bangladesh", "India", "USA", "UK", "Canada"].map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 mt-1 items-center">
-          <button
-            onClick={handleSave}
-            className="px-6 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition shadow"
-          >
-            Save profile
-          </button>
-          <button
-            onClick={() =>
-              setForm({
-                fullName: "Ekonde Roland",
-                email: "hellopixiency@gmail.com",
-                address: "127 Gobadia chittagong, Bangladesh",
-                city: "Chittagong",
-                state: "Chittagong",
-                zip: "3200",
-                country: "Bangladesh",
-              })
-            }
-            className="px-6 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition"
-          >
-            Cancel
-          </button>
+        {/* Edit / Save / Cancel */}
+        <div className="flex gap-1.5 items-center flex-shrink-0">
           {saved && (
-            <span className="flex text-xs text-green-600 font-medium animate-pulse">
-              <BadgeCheck className="w-5 h-5 text-green-600" /> Profile saved!
+            <span className="flex items-center gap-1 text-xs text-green-600 font-medium animate-pulse mr-1">
+              <BadgeCheck className="w-4 h-4" /> Saved!
             </span>
           )}
+          {editing ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
+                ) : (
+                  <Check className="w-3 h-3" />
+                )}
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                <X className="w-3 h-3" /> Cancel
+              </button>
+            </>
+          ) : (
+            <button onClick={handleEdit} className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+              <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Info Cards Grid ── */}
+      <div className="flex gap-3">
+
+        {/* Left column */}
+        <div className="flex-1 flex flex-col gap-3">
+
+          {/* Address */}
+          <div className={cardCls}>
+            <div className={iconWrapCls}>
+              <MapPin className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>Address</p>
+              {editing ? (
+                <input type="text" value={draft.address} onChange={updateDraft("address")} className={inputCls} />
+              ) : (
+                <p className={fieldValueCls}>{form.address || "—"}</p>
+              )}
+            </div>
+          </div>
+
+          {/* City */}
+          <div className={cardCls}>
+            <div className={iconWrapCls}>
+              <Building2 className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>City</p>
+              {editing ? (
+                <input value={draft.city} onChange={updateDraft("city")} className={inputCls} />
+              ) : (
+                <p className={fieldValueCls}>{form.city || "—"}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Fields of Interest */}
+          <div className={cardCls + " items-start"}>
+            <div className={iconWrapCls + " mt-0.5"}>
+              <Tags className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>Fields of Interest</p>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {displayInterests.length === 0 && (
+                  <span className="text-xs text-gray-400 italic">No interests added yet</span>
+                )}
+                {displayInterests.map((tag, i) => (
+                  <span key={tag} className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                    <Sparkles className="w-3 h-3 flex-shrink-0" />
+                    {tag}
+                    {editing && (
+                      <button
+                        onClick={() => removeInterest(i)}
+                        aria-label={`Remove ${tag}`}
+                        className="ml-0.5 text-indigo-400 hover:text-indigo-700 transition flex items-center"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+              {editing && (
+                <>
+                  <div className="mt-2 flex gap-1.5">
+                    <input
+                      type="text"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      placeholder="e.g. Machine Learning…"
+                      className="flex-1 bg-white border border-indigo-300 rounded-xl px-3 py-1.5 text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    />
+                    <button
+                      onClick={addInterest}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition"
+                    >
+                      <Plus className="w-3 h-3" /> Add
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Press Enter or click Add. Click × to remove.</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right column */}
+        <div className="flex-1 flex flex-col gap-3">
+
+          {/* Country — powered by country-state-city */}
+          <div className={cardCls}>
+            <div className={iconWrapCls}>
+              <Globe className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>Country</p>
+              {editing ? (
+                <select value={draft.countryCode} onChange={handleCountryChange} className={selectCls}>
+                  <option value="">— Select country —</option>
+                  {ALL_COUNTRIES.map((c) => (
+                    <option key={c.isoCode} value={c.isoCode}>
+                      {c.flag} {c.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className={fieldValueCls}>
+                  {ALL_COUNTRIES.find((c) => c.isoCode === form.countryCode)?.flag} {form.country}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* State / Region — auto-populated from selected country */}
+          <div className={cardCls}>
+            <div className={iconWrapCls}>
+              <Map className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>State / Region</p>
+              {editing ? (
+                stateList.length > 0 ? (
+                  <select value={draft.state} onChange={updateDraft("state")} className={selectCls}>
+                    <option value="">— Select region —</option>
+                    {stateList.map((s) => (
+                      <option key={s.isoCode} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  // Fallback: free-text for countries with no region data
+                  <input
+                    type="text"
+                    value={draft.state}
+                    onChange={updateDraft("state")}
+                    placeholder="Enter region / province…"
+                    className={inputCls}
+                  />
+                )
+              ) : (
+                <p className={fieldValueCls}>{form.state || "—"}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Phone Number — dial code auto-set from selected country */}
+          <div className={cardCls}>
+            <div className={iconWrapCls}>
+              <Phone className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={fieldLabelCls}>Phone Number</p>
+              {editing ? (
+                <div className="flex gap-1.5 mt-0.5">
+                  {/* ✅ Dial code badge — read-only, auto-updates when country changes */}
+                  <span className="inline-flex items-center px-3 rounded-xl bg-indigo-50 border border-indigo-300 text-sm font-semibold text-indigo-700 whitespace-nowrap select-none">
+                    +{draft.dialCode || "—"}
+                  </span>
+                  <input
+                    type="tel"
+                    value={draft.phoneNumber}
+                    onChange={updateDraft("phoneNumber")}
+                    placeholder="e.g. 677123456"
+                    className={inputCls}
+                  />
+                </div>
+              ) : (
+                // ✅ Display: show full international number
+                <p className={fieldValueCls}>
+                  {form.phoneNumber
+                    ? `+${form.dialCode} ${form.phoneNumber}`
+                    : "—"}
+                </p>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main ProfilePage ───────────────────────────────────────────────────────
+// ── ProfilePage (root) ───────────────────────────────────────────────────────
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("Personal Details");
   const [avatarSrc, setAvatarSrc] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatarSrc(url);
+  const fetchUserProfile = async () => {
+    try {
+      setIsLoading(true);
+      const data = await userService.getUserProfile();
+      if (data) {
+        setUser(data);
+        if (data.avatar) {
+          setAvatarSrc(data.avatar);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const handleProfileUpdate = (updatedUser) => {
+    setUser(updatedUser);
+    if (updatedUser.avatar) {
+      setAvatarSrc(updatedUser.avatar);
+    }
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const result = await userService.uploadAvatar(file);
+        if (result && result.url) {
+          setAvatarSrc(result.url);
+          if (user) {
+            setUser({ ...user, avatar: result.url });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to upload avatar:", err);
+        alert(err.message || "Failed to upload avatar image.");
+      }
+    }
+  };
+
+  const getInitials = () => {
+    if (!user) return "PV";
+    const first = user.firstName ? user.firstName.charAt(0) : "";
+    const last = user.lastName ? user.lastName.charAt(0) : "";
+    return (first + last).toUpperCase() || "PV";
+  };
+
+  const displayRole = user?.role
+    ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase()
+    : "Mentor";
+
   const renderTab = () => {
     switch (activeTab) {
-      case "Personal Details": return <PersonalDetailsTab avatarSrc={avatarSrc} onAvatarChange={handleAvatarChange} />;
-      case "Details": return <DetailsTab />;
+      case "Personal Details":
+        return (
+          <PersonalDetailsTab
+            user={user}
+            isLoading={isLoading}
+            onProfileUpdate={handleProfileUpdate}
+            avatarSrc={avatarSrc}
+            onAvatarChange={handleAvatarChange}
+          />
+        );
+      case "Details":   return <DetailsTab user={user} onProfileUpdate={handleProfileUpdate} />;
       case "Resources": return <ResourcesTab />;
-      case "Schedules": return <SchedulesTab />;
-      case "Payment": return <PaymentTab />;
+      case "Schedules": return <SchedulesTab user={user} />;
+      case "Payment":   return <PaymentTab />;
     }
   };
 
   return (
     <div className="min-h-screen bg-[#f2f3fa] p-4">
-
-
       <div className="flex gap-5">
-        {/* ── Left Panel ──────────────────────────────────────────────────── */}
+
+        {/* ── Left Panel ─────────────────────────────────────────────────── */}
         <div className="w-[240px] flex-shrink-0">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
 
-            {/* Cover / Avatar */}
-            <div className="relative h-28 bg-gradient-to-br from-indigo-400 to-purple-500">
-              {/* Replace with <img src={Profile.src} … /> if you have the asset */}
-              <div className="w-full h-full flex items-end pb-2 px-3">
-                <div className="flex items-end gap-2">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-sm font-bold text-indigo-600 shadow overflow-hidden">
-                    {avatarSrc ? <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" /> : "ER"}
+            {/* Cover / Profile Image */}
+            <div className="relative h-48 bg-gradient-to-br from-indigo-400 to-purple-500 overflow-hidden">
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="Cover" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-white/20 border-4 border-white/40 flex items-center justify-center text-3xl font-bold text-white select-none shadow-lg">
+                    {getInitials()}
                   </div>
-                  <p className="text-white font-bold text-sm drop-shadow mb-0.5">Ekonde Roland</p>
                 </div>
-              </div>
-              <button className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow">
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/30 to-transparent" />
+              <label className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow cursor-pointer hover:bg-white transition">
                 <Camera className="w-3.5 h-3.5 text-gray-600" />
-              </button>
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              </label>
             </div>
 
             {/* Message button */}
@@ -289,19 +651,6 @@ export default function ProfilePage() {
               <button className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-semibold hover:bg-indigo-100 transition">
                 <MessageCircle className="w-3.5 h-3.5" /> Message
               </button>
-            </div>
-
-            {/* Stats */}
-            <div className="flex items-center justify-around px-3 py-2 border-b border-gray-100">
-              <div className="text-center">
-                <span className="text-gray-900 font-bold text-sm px-1.5 py-0.5 bg-red-100 rounded-full">01</span>
-                <p className="text-gray-400 text-[10px] mt-0.5">In Progress</p>
-              </div>
-              <div className="w-px h-6 bg-gray-100" />
-              <div className="text-center">
-                <span className="text-gray-900 font-bold text-sm px-1.5 py-0.5 bg-green-200 rounded-full">05</span>
-                <p className="text-gray-400 text-[10px] mt-0.5">Completed</p>
-              </div>
             </div>
 
             {/* Achievements */}
@@ -324,14 +673,18 @@ export default function ProfilePage() {
                   <button
                     key={label}
                     onClick={onClick}
-                    className={`flex items-center justify-between px-2 py-1.5 rounded-xl text-xs font-medium transition ${danger
+                    className={`flex items-center justify-between px-2 py-1.5 rounded-xl text-xs font-medium transition ${
+                      danger
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : primary
-                          ? "bg-purple-600 text-white hover:bg-purple-700 shadow-sm"
-                          : "hover:bg-gray-50 text-gray-700"
-                      }`}
+                        ? "bg-purple-600 text-white hover:bg-purple-700 shadow-sm"
+                        : "hover:bg-gray-50 text-gray-700"
+                    }`}
                   >
-                    <span className="flex items-center gap-2">{icon}{label}</span>
+                    <span className="flex items-center gap-2">
+                      {icon}
+                      {label === "Mentor" ? displayRole : label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -344,10 +697,9 @@ export default function ProfilePage() {
                 {supportItems.map(({ icon, label, danger }) => (
                   <button
                     key={label}
-                    className={`flex items-center justify-between px-2 py-1.5 rounded-xl text-xs font-medium transition ${danger
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "hover:bg-gray-50 text-gray-700"
-                      }`}
+                    className={`flex items-center justify-between px-2 py-1.5 rounded-xl text-xs font-medium transition ${
+                      danger ? "bg-red-500 text-white hover:bg-red-600" : "hover:bg-gray-50 text-gray-700"
+                    }`}
                   >
                     <span className="flex items-center gap-2">{icon}{label}</span>
                     <ChevronRight className="w-3 h-3 opacity-50" />
@@ -368,17 +720,17 @@ export default function ProfilePage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-t-lg transition ${activeTab === tab
+                className={`px-4 py-1.5 text-sm font-medium rounded-t-lg transition ${
+                  activeTab === tab
                     ? "bg-indigo-600 text-white"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 {tab}
               </button>
             ))}
           </div>
 
-          {/* Tab content */}
           <div>{renderTab()}</div>
         </div>
       </div>

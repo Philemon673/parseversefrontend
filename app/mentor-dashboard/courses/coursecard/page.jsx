@@ -20,11 +20,16 @@ function StarRating({ rating }) {
 }
 
 export default function CourseCard({ course, onPublish }) {
+  if (!course) return null;
+  const displayRating = course.averageRating !== undefined ? course.averageRating : (course.rating || 0);
+  const totalStudents = course._count?.enrollments !== undefined ? course._count.enrollments : (course.students || 0);
+  const displayImage = course.thumbnail || course.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80";
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
       <div className="relative w-full h-36 flex-shrink-0">
         <img
-          src={course.image}
+          src={displayImage}
           alt={course.title}
           className="w-full h-full object-cover"
         />
@@ -35,7 +40,7 @@ export default function CourseCard({ course, onPublish }) {
         )}
         {/* Status Badge */}
         <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-          course.status === "Published" 
+          (course.status === "Published" || course.isPublished)
             ? "bg-green-500 text-white" 
             : "bg-yellow-400 text-yellow-900"
         }`}>
@@ -52,9 +57,12 @@ export default function CourseCard({ course, onPublish }) {
             </p>
             <div className="flex items-center gap-1 mt-1">
               <Eye className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-500">{course.students} Students</span>
+              <span className="text-xs text-gray-500">{totalStudents} Students</span>
               <span className="mx-1 text-gray-300">·</span>
-              <StarRating rating={course.rating} />
+              <StarRating rating={displayRating} />
+              {course.totalReviews > 0 && (
+                <span className="text-[10px] text-gray-400 font-bold">({course.totalReviews})</span>
+              )}
             </div>
           </div>
         </div>

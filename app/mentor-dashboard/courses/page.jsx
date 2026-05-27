@@ -8,6 +8,9 @@ import CourseFilters from "./coursefilter/page";
 import CourseUploadForm from "./courseuploadform/page";
 import { initialCourseList } from "./coursedata/page";
 import { CURRENCY_SYMBOL } from "./formatter/page";
+import { initVideoUpload, uploadVideoToBunny, createCourse, uploadThumbnail, uploadPdf, publishCourse, getInstructorCourses } from "@/lib/courseService";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const stats = [
   {
@@ -48,53 +51,119 @@ const stats = [
 ];
 
 export default function CoursesPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("All Courses");
-  const [courseList, setCourseList] = useState(initialCourseList);
+  const [courseList, setCourseList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Handle publishing a draft course
-  function handlePublishCourse(courseId) {
-    if (window.confirm("Are you sure you want to publish this course?")) {
-      setCourseList(prevList => 
-        prevList.map(course => 
-          course.id === courseId 
-            ? { ...course, status: "Published" }
-            : course
-        )
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getInstructorCourses();
+        setCourseList(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  async function handlePublishCourse(courseId) {
+    if (!window.confirm("Are you sure you want to publish this course?")) return;
+    try {
+      await publishCourse(courseId);
+      setCourseList(prev =>
+        prev.map(c => c.id === courseId ? { ...c, status: "Published", isPublished: true } : c)
       );
       alert("Course published successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to publish course: " + err.message);
     }
   }
 
-  // Filter courses based on active tab
   function getFilteredCourses() {
     switch (activeTab) {
       case "All Courses":
-        return courseList.filter(course => course.status === "Published");
+        return courseList.filter(c => c.isPublished || c.status === "Published");
       case "Video Courses":
-        return courseList.filter(course => course.type === "Video" && course.status === "Published");
+        return courseList.filter(c => c.type === "Video" && (c.isPublished || c.status === "Published"));
       case "Hardcopy":
-        return courseList.filter(course => course.type === "Hardcopy" && course.status === "Published");
+        return courseList.filter(c => c.type === "Hardcopy" && (c.isPublished || c.status === "Published"));
       case "Drafts":
-        return courseList.filter(course => course.status === "Draft");
+        return courseList.filter(c => !c.isPublished && c.status !== "Published");
       default:
-        return courseList.filter(course => course.status === "Published");
+        return courseList.filter(c => c.isPublished || c.status === "Published");
     }
   }
 
   const filteredCourses = getFilteredCourses();
 
-  // Calculate counts for tabs
+  const published = courseList.filter(c => c.isPublished || c.status === "Published");
+  const drafts = courseList.filter(c => !c.isPublished && c.status !== "Published");
+  const totalStudents = courseList.reduce((a, c) => a + (c._count?.enrollments ?? 0), 0);
+
   const courseTabs = [
-    { label: "All Courses", count: courseList.filter(c => c.status === "Published").length },
-    { label: "Video Courses", count: courseList.filter(c => c.type === "Video" && c.status === "Published").length },
-    { label: "Hardcopy", count: courseList.filter(c => c.type === "Hardcopy" && c.status === "Published").length },
-    { label: "Drafts", count: courseList.filter(c => c.status === "Draft").length },
+    { label: "All Courses", count: published.length },
+    { label: "Video Courses", count: published.filter(c => c.type === "Video").length },
+    { label: "Hardcopy", count: published.filter(c => c.type === "Hardcopy").length },
+    { label: "Drafts", count: drafts.length },
+  ];
+
+  const dynamicStats = [
+    { label: "Total Courses", value: String(courseList.length), icon: BookOpen, iconBg: "bg-pink-100", iconColor: "text-pink-600" },
+    { label: "Total Students", value: totalStudents.toLocaleString(), growth: null, icon: Users, iconBg: "bg-green-100", iconColor: "text-green-600" },
+    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}0`, growth: null, icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+    { label: "Avg Rating", value: "4.8", growth: null, icon: Award, iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
   ];
 
   // Handle form submission
-  function handleCourseSubmit(courseData) {
-    console.log("New course submitted:", courseData);
-    alert("Course published successfully!");
+  async function handleCourseSubmit(courseData) {
+    setIsUploading(true);
+    setUploadProgress(0);
+    try {
+      // 1. Create Course Shell
+      const res = await createCourse({
+        title: courseData.title,
+        description: courseData.description,
+        category: courseData.category,
+        structure: courseData.structure,
+        price: courseData.price,
+        isFree: courseData.isFree,
+      });
+
+      const courseId = res.data?.id || res.id || 'temp-id'; // Fallback if API is not fully connected
+
+      // 2. Upload Thumbnail
+      await uploadThumbnail(courseId, courseData.thumbnailFile);
+
+      // 3. Upload File if Single Structure
+      if (!courseData.isMultiple && courseData.courseFile) {
+        if (courseData.category === "Video") {
+          const meta = await initVideoUpload(courseData.title);
+          // Wait for TUS upload
+          await uploadVideoToBunny(courseData.courseFile, meta.data || meta, setUploadProgress);
+        } else {
+          // PDF upload
+          await uploadPdf(courseId, courseData.courseFile);
+        }
+        await publishCourse(courseId);
+        alert("Course published successfully!");
+      } else {
+        alert("Course created successfully! Redirecting to Module Manager...");
+        router.push(`/mentor-dashboard/courses/${courseId}/manage`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed: " + err.message);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   }
 
   return (
@@ -117,7 +186,7 @@ export default function CoursesPage() {
 
       {/* Stats Row */}
       <div className="flex gap-4">
-        {stats.map((stat) => (
+        {(loading ? stats : dynamicStats).map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
@@ -134,17 +203,21 @@ export default function CoursesPage() {
         />
 
         {/* Course Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {filteredCourses.length > 0 ? (
+        <div className="grid grid-cols-4 gap-4">
+          {loading ? (
+            <div className="col-span-4 flex justify-center items-center py-12">
+              <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+            </div>
+          ) : filteredCourses.length > 0 ? (
             filteredCourses.map((course) => (
-              <CourseCard 
-                key={course.id} 
+              <CourseCard
+                key={course.id}
                 course={course}
                 onPublish={handlePublishCourse}
               />
             ))
           ) : (
-            <div className="col-span-2 flex flex-col items-center justify-center py-12">
+            <div className="col-span-4 flex flex-col items-center justify-center py-12">
               <p className="text-gray-400 text-sm">No courses found in this category</p>
             </div>
           )}
@@ -152,35 +225,4 @@ export default function CoursesPage() {
       </div>
     </div>
   );
-  // In page.jsx
-
-function handleCourseSubmit(courseData) {
-  console.log("New course submitted:", courseData);
-  console.log("Course file:", courseData.courseFile);
-  console.log("Thumbnail:", courseData.thumbnailFile);
-  
-  // Option 1: Upload to your backend API
-  uploadToBackend(courseData.formData);
-  
-  // Option 2: Upload to cloud storage (Firebase, AWS S3, Cloudinary)
-  // uploadToCloudStorage(courseData.courseFile, courseData.thumbnailFile);
-  
-  alert("Course published successfully!");
-}
-
-// Example backend upload function
-async function uploadToBackend(formData) {
-  try {
-    const response = await fetch('/api/courses/upload', {
-      method: 'POST',
-      body: formData, // FormData with files
-    });
-    
-    const data = await response.json();
-    console.log("Upload response:", data);
-  } catch (error) {
-    console.error("Upload error:", error);
-    alert("Failed to upload course");
-  }
-}
 }

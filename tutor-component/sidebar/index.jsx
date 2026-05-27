@@ -10,18 +10,20 @@ import {
   FolderOpen,
   MessageCircle,
   Bell,
+  Calendar,
   LogOut,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-context";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/mentor-dashboard/Home" },
-  { icon: BookOpen, label: "Course", href: "/mentor-dashboard/courses" },
-  { icon: FolderOpen, label: "Profile", href: "/mentor-dashboard/profile" },
-  { icon: MessageCircle, label: "Groups", href: "/mentor-dashboard/groups" },
-  { icon: MessageCircle, label: "Chat", href: "/mentor-dashboard/chat" },
-  { icon: Bell, label: "Notifications", href: "/mentor-dashboard/notification" },
+  { icon: Home,          label: "Home",          href: "/tutor-dashboard/Home" },
+  { icon: BookOpen,      label: "Course",         href: "/tutor-dashboard/courses" },
+  { icon: FolderOpen,    label: "Profile",        href: "/tutor-dashboard/profile" },
+  { icon: MessageCircle, label: "Chat",           href: "/tutor-dashboard/chat" },
+  { icon: MessageCircle, label: "Groups",         href: "/tutor-dashboard/groups" },
+  { icon: Calendar,      label: "Sessions",       href: "/tutor-dashboard/sessions" },
+  { icon: Bell,          label: "Notifications",  href: "/tutor-dashboard/notification" },
 ];
 
 // ── Logout Button with confirmation modal ─────────────────────────────────────
@@ -67,21 +69,17 @@ function LogoutButton() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => !loggingOut && setShowConfirm(false)}
           />
-
           {/* Modal card */}
           <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-[320px] flex flex-col items-center gap-4">
-            {/* Icon */}
             <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
               <LogOut className="w-7 h-7 text-red-500" />
             </div>
-
             <div className="text-center">
               <h3 className="font-bold text-slate-800 text-base">Sign out of ParseVerse?</h3>
               <p className="text-slate-500 text-sm mt-1">
                 You&apos;ll need to log back in to access your dashboard.
               </p>
             </div>
-
             <div className="flex gap-3 w-full mt-1">
               <button
                 onClick={() => setShowConfirm(false)}
@@ -120,7 +118,6 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { unreadCount } = useNotifications();
 
-  // Determine which nav item is active based on pathname
   const getActiveLabel = () => {
     const activeItem = navItems.find((item) => pathname.startsWith(item.href));
     return activeItem ? activeItem.label : "Home";

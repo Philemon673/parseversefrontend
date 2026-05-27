@@ -89,12 +89,8 @@ export const userService = {
   },
 
   // Upload user avatar with security checks
-  async uploadAvatar(userId: number, file: File) {
+  async uploadAvatar(file: File) {
     try {
-      if (!userId || userId <= 0) {
-        throw new Error('Invalid user ID');
-      }
-
       // Validate file
       const validationResult = this.validateFile(file);
       if (!validationResult.valid) {
@@ -102,11 +98,10 @@ export const userService = {
       }
 
       const formData = new FormData();
-      formData.append('avatar', file);
-      formData.append('userId', userId.toString());
+      formData.append('file', file);
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/avatar`, {
+      const response = await fetch(`${API_BASE_URL}/uploads/avatar`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -181,7 +176,133 @@ export const userService = {
       sanitized.city = capitalize(data.city.trim()).substring(0, 100);
     }
 
+    if (data.address) {
+      sanitized.address = data.address.trim().substring(0, 255);
+    }
+
+    if (data.state) {
+      sanitized.state = data.state.trim().substring(0, 100);
+    }
+
+    if (data.interests) {
+      sanitized.interests = data.interests.map(i => i.trim()).filter(Boolean);
+    }
+
+    if (data.bio) {
+      sanitized.bio = data.bio.trim().substring(0, 500);
+    }
+    if (data.dob) {
+      sanitized.dob = data.dob.trim().substring(0, 100);
+    }
+    if (data.qualification) {
+      sanitized.qualification = data.qualification.trim().substring(0, 255);
+    }
+    if (data.gender) {
+      sanitized.gender = data.gender.trim().substring(0, 50);
+    }
+    if (data.experience) {
+      sanitized.experience = data.experience.trim().substring(0, 100);
+    }
+    if (data.languages) {
+      sanitized.languages = data.languages.trim().substring(0, 255);
+    }
+    if (data.subjects) {
+      sanitized.subjects = data.subjects.trim().substring(0, 255);
+    }
+    if (data.prefOnline) {
+      sanitized.prefOnline = data.prefOnline.trim().substring(0, 100);
+    }
+    if (data.prefOneToOne) {
+      sanitized.prefOneToOne = data.prefOneToOne.trim().substring(0, 100);
+    }
+    if (data.prefGroupSession) {
+      sanitized.prefGroupSession = data.prefGroupSession.trim().substring(0, 100);
+    }
+    if (data.prefHomeTutoring) {
+      sanitized.prefHomeTutoring = data.prefHomeTutoring.trim().substring(0, 100);
+    }
+
     return sanitized;
+  },
+
+  // ── Weekly Availability ─────────────────────────────────────────
+  // Availability is stored as JSON on the User model via PATCH /users/me
+  async updateAvailability(availability: Record<string, any>) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/me`, {
+        method: 'PATCH',
+        body: JSON.stringify({ availability }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to update availability`);
+      }
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, 'updateAvailability');
+    }
+  },
+
+  // ── Scheduled Sessions ──────────────────────────────────────────
+  async getSessions(): Promise<any[]> {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule`, { method: 'GET' });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch sessions`);
+      }
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, 'getSessions');
+      return [];
+    }
+  },
+
+  async createSession(sessionData: SessionData): Promise<any> {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule`, {
+        method: 'POST',
+        body: JSON.stringify(sessionData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to create session`);
+      }
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, 'createSession');
+    }
+  },
+
+  async updateSession(sessionId: string, sessionData: Partial<SessionData>): Promise<any> {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule/${sessionId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(sessionData),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to update session`);
+      }
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, 'updateSession');
+    }
+  },
+
+  async deleteSession(sessionId: string): Promise<any> {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule/${sessionId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to delete session`);
+      }
+      return await response.json();
+    } catch (error) {
+      handleApiError(error, 'deleteSession');
+    }
   },
 
   // Health check
@@ -228,6 +349,31 @@ export interface UpdateProfileData {
   country?: string;
   phone?: string;
   city?: string;
+  address?: string;
+  state?: string;
+  interests?: string[];
+  // Details tab fields
+  bio?: string;
+  dob?: string;
+  qualification?: string;
+  gender?: string;
+  experience?: string;
+  languages?: string;
+  subjects?: string;
+  prefOnline?: string;
+  prefOneToOne?: string;
+  prefGroupSession?: string;
+  prefHomeTutoring?: string;
+  availability?: Record<string, any>;
+}
+
+export interface SessionData {
+  dateTime: string;
+  student: string;
+  subject: string;
+  type: string;
+  duration: string;
+  status?: string;
 }
 
 export interface ApiResponse<T> {

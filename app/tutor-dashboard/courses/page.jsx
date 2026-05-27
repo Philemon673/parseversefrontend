@@ -1,105 +1,138 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Play, BookOpen, Users, DollarSign, Award } from "lucide-react";
+import { useRouter } from "next/navigation";
 import StatCard from "./statcard/page";
 import CourseCard from "./coursecard/page";
 import CourseFilters from "./coursefilter/page";
 import CourseUploadForm from "./courseuploadform/page";
-import { initialCourseList } from "./coursedata/page";
 import { CURRENCY_SYMBOL } from "./formatter/page";
+import {
+  initVideoUpload,
+  uploadVideoToBunny,
+  createCourse,
+  uploadThumbnail,
+  uploadPdf,
+  publishCourse,
+  getInstructorCourses,
+} from "@/lib/courseService";
 
-const stats = [
-  {
-    label: "Total Courses",
-    value: "12",
-    growth: null,
-    icon: BookOpen,
-    iconBg: "bg-pink-100",
-    iconColor: "text-pink-600",
-  },
-  {
-    label: "Total Students",
-    value: "3,458",
-    growth: "+12%",
-    growthColor: "text-green-500",
-    icon: Users,
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
-  },
-  {
-    label: "Total Earnings",
-    value: `${CURRENCY_SYMBOL}24,580`,
-    growth: "+18%",
-    growthColor: "text-green-500",
-    icon: DollarSign,
-    iconBg: "bg-orange-100",
-    iconColor: "text-orange-600",
-  },
-  {
-    label: "Avg Rating",
-    value: "4.8",
-    growth: "+0.2",
-    growthColor: "text-yellow-500",
-    icon: Award,
-    iconBg: "bg-yellow-100",
-    iconColor: "text-yellow-600",
-  },
+const skeletonStats = [
+  { label: "Total Courses",  value: "—", icon: BookOpen,   iconBg: "bg-pink-100",   iconColor: "text-pink-600" },
+  { label: "Total Students", value: "—", icon: Users,      iconBg: "bg-green-100",  iconColor: "text-green-600" },
+  { label: "Total Earnings", value: "—", icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+  { label: "Avg Rating",     value: "—", icon: Award,      iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
 ];
 
 export default function CoursesPage() {
-  const [activeTab, setActiveTab] = useState("All Courses");
-  const [courseList, setCourseList] = useState(initialCourseList);
+  const router = useRouter();
+  const [activeTab, setActiveTab]           = useState("All Courses");
+  const [courseList, setCourseList]         = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [isUploading, setIsUploading]       = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Handle publishing a draft course
-  function handlePublishCourse(courseId) {
-    if (window.confirm("Are you sure you want to publish this course?")) {
-      setCourseList(prevList => 
-        prevList.map(course => 
-          course.id === courseId 
-            ? { ...course, status: "Published" }
-            : course
-        )
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getInstructorCourses();
+        setCourseList(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const published     = courseList.filter((c) => c.isPublished || c.status === "Published");
+  const drafts        = courseList.filter((c) => !c.isPublished && c.status !== "Published");
+  const totalStudents = courseList.reduce((a, c) => a + (c._count?.enrollments ?? 0), 0);
+
+  const dynamicStats = [
+    { label: "Total Courses",  value: String(courseList.length),      icon: BookOpen,   iconBg: "bg-pink-100",   iconColor: "text-pink-600" },
+    { label: "Total Students", value: totalStudents.toLocaleString(), icon: Users,      iconBg: "bg-green-100",  iconColor: "text-green-600" },
+    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}0`,          icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+    { label: "Avg Rating",     value: "4.8",                          icon: Award,      iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
+  ];
+
+  async function handlePublishCourse(courseId) {
+    if (!window.confirm("Are you sure you want to publish this course?")) return;
+    try {
+      await publishCourse(courseId);
+      setCourseList((prev) =>
+        prev.map((c) => c.id === courseId ? { ...c, status: "Published", isPublished: true } : c)
       );
       alert("Course published successfully!");
+    } catch (err) {
+      alert("Failed to publish course: " + err.message);
     }
   }
 
-  // Filter courses based on active tab
   function getFilteredCourses() {
     switch (activeTab) {
-      case "All Courses":
-        return courseList.filter(course => course.status === "Published");
-      case "Video Courses":
-        return courseList.filter(course => course.type === "Video" && course.status === "Published");
-      case "Hardcopy":
-        return courseList.filter(course => course.type === "Hardcopy" && course.status === "Published");
-      case "Drafts":
-        return courseList.filter(course => course.status === "Draft");
-      default:
-        return courseList.filter(course => course.status === "Published");
+      case "All Courses":   return courseList.filter((c) => c.isPublished || c.status === "Published");
+      case "Video Courses": return courseList.filter((c) => c.type === "Video"    && (c.isPublished || c.status === "Published"));
+      case "Hardcopy":      return courseList.filter((c) => c.type === "Hardcopy" && (c.isPublished || c.status === "Published"));
+      case "Drafts":        return courseList.filter((c) => !c.isPublished && c.status !== "Published");
+      default:              return courseList.filter((c) => c.isPublished || c.status === "Published");
     }
   }
 
   const filteredCourses = getFilteredCourses();
 
-  // Calculate counts for tabs
   const courseTabs = [
-    { label: "All Courses", count: courseList.filter(c => c.status === "Published").length },
-    { label: "Video Courses", count: courseList.filter(c => c.type === "Video" && c.status === "Published").length },
-    { label: "Hardcopy", count: courseList.filter(c => c.type === "Hardcopy" && c.status === "Published").length },
-    { label: "Drafts", count: courseList.filter(c => c.status === "Draft").length },
+    { label: "All Courses",   count: published.length },
+    { label: "Video Courses", count: published.filter((c) => c.type === "Video").length },
+    { label: "Hardcopy",      count: published.filter((c) => c.type === "Hardcopy").length },
+    { label: "Drafts",        count: drafts.length },
   ];
 
-  // Handle form submission
-  function handleCourseSubmit(courseData) {
-    console.log("New course submitted:", courseData);
-    alert("Course published successfully!");
+  async function handleCourseSubmit(courseData) {
+    setIsUploading(true);
+    setUploadProgress(0);
+    try {
+      const res = await createCourse({
+        title:       courseData.title,
+        description: courseData.description,
+        category:    courseData.category,
+        structure:   courseData.structure,
+        price:       courseData.price,
+        isFree:      courseData.isFree,
+      });
+      const courseId = res.data?.id || res.id || "temp-id";
+
+      await uploadThumbnail(courseId, courseData.thumbnailFile);
+
+      if (!courseData.isMultiple && courseData.courseFile) {
+        if (courseData.category === "Video") {
+          const meta = await initVideoUpload(courseData.title);
+          await uploadVideoToBunny(courseData.courseFile, meta.data || meta, setUploadProgress);
+        } else {
+          await uploadPdf(courseId, courseData.courseFile);
+        }
+        await publishCourse(courseId);
+        alert("Course published successfully!");
+      } else {
+        alert("Course created! Redirecting to Module Manager…");
+        router.push(`/tutor-dashboard/courses/${courseId}/manage`);
+      }
+
+      const refreshed = await getInstructorCourses();
+      setCourseList(Array.isArray(refreshed) ? refreshed : []);
+    } catch (err) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   }
 
   return (
     <div className="p-6 bg-[#f2f3fa] min-h-screen flex flex-col gap-6">
-      
+
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
@@ -117,34 +150,49 @@ export default function CoursesPage() {
 
       {/* Stats Row */}
       <div className="flex gap-4">
-        {stats.map((stat) => (
+        {(loading ? skeletonStats : dynamicStats).map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
+
+      {/* Upload progress banner */}
+      {isUploading && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-6 h-6 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-indigo-700">Uploading course…</p>
+            <div className="mt-1.5 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-sm font-bold text-indigo-600">{uploadProgress}%</span>
+        </div>
+      )}
 
       {/* Course Upload Form */}
       <CourseUploadForm onSubmit={handleCourseSubmit} />
 
       {/* Course List */}
       <div className="flex flex-col gap-4">
-        <CourseFilters 
+        <CourseFilters
           courseTabs={courseTabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
-
-        {/* Course Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {filteredCourses.length > 0 ? (
+        <div className="grid grid-cols-4 gap-4">
+          {loading ? (
+            <div className="col-span-4 flex justify-center items-center py-12">
+              <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+            </div>
+          ) : filteredCourses.length > 0 ? (
             filteredCourses.map((course) => (
-              <CourseCard 
-                key={course.id} 
-                course={course}
-                onPublish={handlePublishCourse}
-              />
+              <CourseCard key={course.id} course={course} onPublish={handlePublishCourse} />
             ))
           ) : (
-            <div className="col-span-2 flex flex-col items-center justify-center py-12">
+            <div className="col-span-4 flex flex-col items-center justify-center py-12">
               <p className="text-gray-400 text-sm">No courses found in this category</p>
             </div>
           )}

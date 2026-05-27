@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Edit3, Check, X, Plus, Trash2, ChevronDown } from "lucide-react";
+import { userService } from "@/lib/userService";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 type SessionStatus = "Confirmed" | "Pending" | "Cancelled";
 
 interface Session {
-  id: number;
+  id: string;
   dateTime: string;
   student: string;
   subject: string;
@@ -38,33 +39,28 @@ const SESSION_TYPES = ["One to One", "Group", "Home Tutoring"];
 const DURATIONS = ["30 Min", "1 Hour", "1.5 Hour", "2 Hours"];
 const FILTER_OPTIONS: Array<SessionStatus | "All"> = ["All", "Confirmed", "Pending", "Cancelled"];
 
-/* ─── Initial data ───────────────────────────────────────────────────────── */
-const initAvailability: Record<Day, DayAvailability> = {
-  Mon: { available: true,  slots: [{ id: 1, from: "09:00", to: "13:00" }, { id: 2, from: "16:00", to: "20:00" }] },
-  Tue: { available: true,  slots: [{ id: 3, from: "09:00", to: "13:00" }] },
-  Wed: { available: true,  slots: [{ id: 4, from: "09:00", to: "13:00" }] },
-  Thu: { available: true,  slots: [{ id: 5, from: "09:00", to: "13:00" }] },
-  Fri: { available: true,  slots: [{ id: 6, from: "09:00", to: "13:00" }] },
-  Sat: { available: false, slots: [{ id: 7, from: "10:00", to: "14:00" }] },
+/* ─── Default availability ─────────────────────────────────────────────── */
+const DEFAULT_AVAILABILITY: Record<Day, DayAvailability> = {
+  Mon: { available: true,  slots: [{ id: 1, from: "09:00", to: "17:00" }] },
+  Tue: { available: true,  slots: [{ id: 2, from: "09:00", to: "17:00" }] },
+  Wed: { available: true,  slots: [{ id: 3, from: "09:00", to: "17:00" }] },
+  Thu: { available: true,  slots: [{ id: 4, from: "09:00", to: "17:00" }] },
+  Fri: { available: true,  slots: [{ id: 5, from: "09:00", to: "17:00" }] },
+  Sat: { available: false, slots: [] },
   Sun: { available: false, slots: [] },
 };
 
-const initSessions: Session[] = [
-  { id: 1, dateTime: "20 May 2024, 10:00 AM", student: "Sarah Ahmed",   subject: "Mathematics",      type: "One to One", duration: "1 Hour",   status: "Confirmed" },
-  { id: 2, dateTime: "20 May 2024, 04:00 PM", student: "Rafiq Islam",   subject: "Physics",          type: "Group",      duration: "1.5 Hour", status: "Confirmed" },
-  { id: 3, dateTime: "21 May 2024, 10:00 AM", student: "Nusrat Jahan",  subject: "Computer Science", type: "One to One", duration: "1 Hour",   status: "Pending"   },
-  { id: 4, dateTime: "22 May 2024, 05:00 PM", student: "Imtiaz Hasan",  subject: "Mathematics",      type: "One to One", duration: "1 Hour",   status: "Confirmed" },
-];
-
-/* ─── Add Session Modal ──────────────────────────────────────────────────── */
+/* ─── Session Modal ──────────────────────────────────────────────────────── */
 function SessionModal({
   initial,
   onSave,
   onClose,
+  isSaving,
 }: {
   initial?: Session;
   onSave: (s: Omit<Session, "id">) => void;
   onClose: () => void;
+  isSaving: boolean;
 }) {
   const [dateTime, setDateTime] = useState(initial?.dateTime ?? "");
   const [student, setStudent]   = useState(initial?.student ?? "");
@@ -130,9 +126,10 @@ function SessionModal({
         </div>
 
         <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50 transition">Cancel</button>
-          <button onClick={handleSave} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition">
-            <Check className="w-3.5 h-3.5" />{initial ? "Update" : "Add Session"}
+          <button onClick={onClose} disabled={isSaving} className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-xs font-semibold hover:bg-gray-50 transition disabled:opacity-50">Cancel</button>
+          <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition disabled:opacity-50">
+            {isSaving ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" /> : <Check className="w-3.5 h-3.5" />}
+            {isSaving ? "Saving…" : (initial ? "Update" : "Add Session")}
           </button>
         </div>
       </div>
@@ -141,22 +138,61 @@ function SessionModal({
 }
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
-let slotIdCounter = 20;
+let slotIdCounter = 100;
 
-export default function SchedulesTab() {
-  const [availability, setAvailability] = useState<Record<Day, DayAvailability>>(initAvailability);
+export default function SchedulesTab({ user }: { user?: any }) {
+  /* ── Availability state ── */
+  const [availability, setAvailability] = useState<Record<Day, DayAvailability>>(DEFAULT_AVAILABILITY);
   const [editingAvail, setEditingAvail] = useState(false);
-  const [availDraft, setAvailDraft]     = useState<Record<Day, DayAvailability>>(initAvailability);
+  const [availDraft, setAvailDraft]     = useState<Record<Day, DayAvailability>>(DEFAULT_AVAILABILITY);
+  const [savingAvail, setSavingAvail]   = useState(false);
+  const [availError, setAvailError]     = useState("");
 
-  const [sessions, setSessions]         = useState<Session[]>(initSessions);
-  const [filter, setFilter]             = useState<SessionStatus | "All">("All");
-  const [addModal, setAddModal]         = useState(false);
-  const [editSession, setEditSession]   = useState<Session | null>(null);
-  const [showAll, setShowAll]           = useState(false);
+  /* ── Sessions state ── */
+  const [sessions, setSessions]       = useState<Session[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [filter, setFilter]           = useState<SessionStatus | "All">("All");
+  const [addModal, setAddModal]       = useState(false);
+  const [editSession, setEditSession] = useState<Session | null>(null);
+  const [showAll, setShowAll]         = useState(false);
+  const [modalSaving, setModalSaving] = useState(false);
+  const [sessionError, setSessionError] = useState("");
 
-  let sessionIdCounter = sessions.length + 1;
+  /* ── Load availability from user prop ── */
+  useEffect(() => {
+    if (user?.availability) {
+      try {
+        const saved = user.availability as Record<Day, DayAvailability>;
+        // Merge saved data onto the default structure so all 7 days always exist
+        const merged = { ...DEFAULT_AVAILABILITY };
+        DAYS.forEach((day) => {
+          if (saved[day] !== undefined) merged[day] = saved[day];
+        });
+        setAvailability(merged);
+        setAvailDraft(merged);
+      } catch (_) {
+        // fallback to default
+      }
+    }
+  }, [user]);
 
-  /* availability helpers */
+  /* ── Load sessions from API on mount ── */
+  useEffect(() => {
+    const load = async () => {
+      setLoadingSessions(true);
+      try {
+        const data = await userService.getSessions();
+        setSessions(data || []);
+      } catch (err: any) {
+        setSessionError(err?.message || "Failed to load sessions.");
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
+    load();
+  }, []);
+
+  /* ── Availability helpers ── */
   const toggleDay = (day: Day) =>
     setAvailDraft((d) => ({ ...d, [day]: { ...d[day], available: !d[day].available } }));
 
@@ -178,21 +214,74 @@ export default function SchedulesTab() {
       [day]: { ...d[day], slots: d[day].slots.filter((s) => s.id !== id) },
     }));
 
-  const saveAvail  = () => { setAvailability(availDraft); setEditingAvail(false); };
-  const cancelAvail = () => { setAvailDraft(availability); setEditingAvail(false); };
+  const saveAvail = async () => {
+    setSavingAvail(true);
+    setAvailError("");
+    try {
+      await userService.updateAvailability(availDraft);
+      setAvailability(availDraft);
+      setEditingAvail(false);
+    } catch (err: any) {
+      setAvailError(err?.message || "Failed to save availability.");
+    } finally {
+      setSavingAvail(false);
+    }
+  };
 
-  /* sessions helpers */
-  const addSession = (s: Omit<Session, "id">) => {
-    setSessions((prev) => [...prev, { id: sessionIdCounter++, ...s }]);
-    setAddModal(false);
+  const cancelAvail = () => { setAvailDraft(availability); setEditingAvail(false); setAvailError(""); };
+
+  /* ── Session helpers ── */
+  const handleAddSession = async (s: Omit<Session, "id">) => {
+    setModalSaving(true);
+    try {
+      const created = await userService.createSession(s);
+      if (created) setSessions((prev) => [created, ...prev]);
+      setAddModal(false);
+      setSessionError("");
+    } catch (err: any) {
+      setSessionError(err?.message || "Failed to add session.");
+    } finally {
+      setModalSaving(false);
+    }
   };
-  const updateSession = (s: Omit<Session, "id">) => {
-    setSessions((prev) => prev.map((x) => (x.id === editSession!.id ? { id: editSession!.id, ...s } : x)));
-    setEditSession(null);
+
+  const handleUpdateSession = async (s: Omit<Session, "id">) => {
+    if (!editSession) return;
+    setModalSaving(true);
+    try {
+      const updated = await userService.updateSession(editSession.id, s);
+      if (updated) {
+        setSessions((prev) => prev.map((x) => (x.id === editSession.id ? updated : x)));
+      }
+      setEditSession(null);
+      setSessionError("");
+    } catch (err: any) {
+      setSessionError(err?.message || "Failed to update session.");
+    } finally {
+      setModalSaving(false);
+    }
   };
-  const deleteSession = (id: number) => setSessions((prev) => prev.filter((s) => s.id !== id));
-  const updateStatus  = (id: number, status: SessionStatus) =>
-    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+
+  const handleDeleteSession = async (id: string) => {
+    try {
+      await userService.deleteSession(id);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      setSessionError("");
+    } catch (err: any) {
+      setSessionError(err?.message || "Failed to delete session.");
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: SessionStatus) => {
+    try {
+      const updated = await userService.updateSession(id, { status });
+      if (updated) {
+        setSessions((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      }
+    } catch (err: any) {
+      setSessionError(err?.message || "Failed to update status.");
+    }
+  };
 
   const filtered = filter === "All" ? sessions : sessions.filter((s) => s.status === filter);
   const visible  = showAll ? filtered : filtered.slice(0, 4);
@@ -205,11 +294,12 @@ export default function SchedulesTab() {
 
   return (
     <>
-      {addModal    && <SessionModal onSave={addSession}    onClose={() => setAddModal(false)} />}
-      {editSession && <SessionModal initial={editSession}  onSave={updateSession} onClose={() => setEditSession(null)} />}
+      {addModal    && <SessionModal onSave={handleAddSession}    onClose={() => setAddModal(false)}    isSaving={modalSaving} />}
+      {editSession && <SessionModal initial={editSession}        onSave={handleUpdateSession}          onClose={() => setEditSession(null)} isSaving={modalSaving} />}
 
       <div className="flex flex-col gap-4">
-        {/* ── Weekly Availability ────────────────────────────────────────── */}
+
+        {/* ── Weekly Availability ──────────────────────────────────────── */}
         <div className="border border-gray-100 rounded-2xl p-4 bg-white">
           <div className="flex items-start justify-between mb-3">
             <div>
@@ -218,19 +308,24 @@ export default function SchedulesTab() {
             </div>
             {editingAvail ? (
               <div className="flex gap-1.5">
-                <button onClick={saveAvail} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition">
-                  <Check className="w-3 h-3" /> Save
+                <button onClick={saveAvail} disabled={savingAvail} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition disabled:opacity-50">
+                  {savingAvail ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" /> : <Check className="w-3 h-3" />}
+                  {savingAvail ? "Saving…" : "Save"}
                 </button>
-                <button onClick={cancelAvail} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
+                <button onClick={cancelAvail} disabled={savingAvail} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50">
                   <X className="w-3 h-3" /> Cancel
                 </button>
               </div>
             ) : (
-              <button onClick={() => { setAvailDraft(availability); setEditingAvail(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+              <button onClick={() => { setAvailDraft(availability); setEditingAvail(true); setAvailError(""); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
                 <Edit3 className="w-3 h-3" /> Edit Availability
               </button>
             )}
           </div>
+
+          {availError && (
+            <p className="text-xs text-red-500 mb-2">{availError}</p>
+          )}
 
           <div className="grid grid-cols-7 gap-2">
             {DAYS.map((day) => {
@@ -279,12 +374,11 @@ export default function SchedulesTab() {
           </div>
         </div>
 
-        {/* ── Upcoming Sessions ─────────────────────────────────────────── */}
+        {/* ── Upcoming Sessions ────────────────────────────────────────── */}
         <div className="border border-gray-100 rounded-2xl p-4 bg-white">
           <div className="flex items-start justify-between mb-3">
             <h3 className="text-sm font-bold text-gray-800">Upcoming Sessions</h3>
             <div className="flex items-center gap-2">
-              {/* Filter dropdown */}
               <div className="relative">
                 <select
                   value={filter}
@@ -304,7 +398,19 @@ export default function SchedulesTab() {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {sessionError && (
+            <div className="mb-3 flex items-center justify-between bg-red-50 border border-red-200 text-red-600 text-xs font-medium px-3 py-2 rounded-xl">
+              <span>{sessionError}</span>
+              <button onClick={() => setSessionError("")}><X className="w-3.5 h-3.5" /></button>
+            </div>
+          )}
+
+          {loadingSessions ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
+              <p className="text-xs text-gray-400">Loading sessions…</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="py-8 text-center text-xs text-gray-400">No sessions found.</div>
           ) : (
             <table className="w-full text-xs">
@@ -330,8 +436,8 @@ export default function SchedulesTab() {
                     <td className="py-2.5">
                       <select
                         value={s.status}
-                        onChange={(e) => updateStatus(s.id, e.target.value as SessionStatus)}
-                        className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 focus:outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer ${statusStyles[s.status]}`}
+                        onChange={(e) => handleUpdateStatus(s.id, e.target.value as SessionStatus)}
+                        className={`text-[10px] font-semibold rounded-full px-2 py-0.5 border-0 focus:outline-none focus:ring-1 focus:ring-indigo-400 cursor-pointer ${statusStyles[s.status as SessionStatus] || ""}`}
                       >
                         {(["Confirmed", "Pending", "Cancelled"] as SessionStatus[]).map((st) => (
                           <option key={st} value={st}>{st}</option>
@@ -343,7 +449,7 @@ export default function SchedulesTab() {
                         <button onClick={() => setEditSession(s)} className="p-1 rounded-lg hover:bg-indigo-50 text-indigo-400 transition" title="Edit">
                           <Edit3 className="w-3 h-3" />
                         </button>
-                        <button onClick={() => deleteSession(s.id)} className="p-1 rounded-lg hover:bg-red-50 text-red-400 transition" title="Delete">
+                        <button onClick={() => handleDeleteSession(s.id)} className="p-1 rounded-lg hover:bg-red-50 text-red-400 transition" title="Delete">
                           <Trash2 className="w-3 h-3" />
                         </button>
                       </div>

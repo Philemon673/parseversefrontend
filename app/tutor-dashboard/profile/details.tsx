@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Edit3, Check, X, Monitor, Users, User, Home } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Edit3, Check, X, Monitor, Users, User, Home, BadgeCheck } from "lucide-react";
+import { userService } from "@/lib/userService";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface PersonalInfo {
@@ -15,11 +16,18 @@ interface PersonalInfo {
 
 interface TeachingPref {
   label: string;
+  key: string;
   options: string[];
   value: string;
   bg: string;
   activeBg: string;
   iconColor: string;
+}
+
+/* ─── Props ──────────────────────────────────────────────────────────────── */
+interface DetailsTabProps {
+  user: any;
+  onProfileUpdate: (updated: any) => void;
 }
 
 /* ─── Sub-components ─────────────────────────────────────────────────────── */
@@ -62,7 +70,7 @@ function InfoRow({
           />
         )
       ) : (
-        <span className="text-xs font-medium text-gray-700">{value}</span>
+        <span className="text-xs font-medium text-gray-700">{value || "—"}</span>
       )}
     </div>
   );
@@ -104,54 +112,173 @@ const SubjectIcon = () => (
   </svg>
 );
 
+const prefIcons: Record<string, React.ReactNode> = {
+  "Online":        <Monitor className="w-5 h-5" />,
+  "One to One":    <User className="w-5 h-5" />,
+  "Group Session": <Users className="w-5 h-5" />,
+  "Home Tutoring": <Home className="w-5 h-5" />,
+};
+
+const DEFAULT_PREFS: Omit<TeachingPref, "value">[] = [
+  { label: "Online",        key: "prefOnline",        options: ["Preferred", "Not Preferred", "Neutral"], bg: "bg-blue-50",   activeBg: "bg-blue-100",   iconColor: "text-blue-500"   },
+  { label: "One to One",    key: "prefOneToOne",      options: ["Preferred", "Not Preferred", "Neutral"], bg: "bg-purple-50", activeBg: "bg-purple-100", iconColor: "text-purple-500" },
+  { label: "Group Session", key: "prefGroupSession",  options: ["Yes", "No"],                             bg: "bg-indigo-50", activeBg: "bg-indigo-100", iconColor: "text-indigo-500" },
+  { label: "Home Tutoring", key: "prefHomeTutoring",  options: ["Yes", "No"],                             bg: "bg-orange-50", activeBg: "bg-orange-100", iconColor: "text-orange-400" },
+];
+
 /* ─── Main Component ─────────────────────────────────────────────────────── */
-export default function DetailsTab() {
-  /* About Me */
-  const [bio, setBio] = useState(
-    "Experienced tutor with over 6 years of teaching students in Mathematics, Physics and Computer Science. I love helping students understand complex topics in a simple way and achieve their academic goals."
-  );
+export default function DetailsTab({ user, onProfileUpdate }: DetailsTabProps) {
+
+  /* ── About Me ─────────────────────────────────────────────────── */
+  const [bio, setBio] = useState("");
   const [editingBio, setEditingBio] = useState(false);
-  const [bioDraft, setBioDraft] = useState(bio);
+  const [bioDraft, setBioDraft] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
+  const [bioSaved, setBioSaved] = useState(false);
+  const [bioError, setBioError] = useState("");
 
-  const saveBio = () => { setBio(bioDraft); setEditingBio(false); };
-  const cancelBio = () => { setBioDraft(bio); setEditingBio(false); };
-
-  /* Personal Info */
+  /* ── Personal Info ─────────────────────────────────────────────── */
   const [info, setInfo] = useState<PersonalInfo>({
-    dob: "15 March 1990",
-    qualification: "MSc in Computer Science",
-    gender: "Male",
-    experience: "6+ Years",
-    languages: "English, Bengali",
-    subjects: "Mathematics, Physics, Computer Science",
+    dob: "", qualification: "", gender: "", experience: "", languages: "", subjects: "",
   });
   const [editingInfo, setEditingInfo] = useState(false);
   const [infoDraft, setInfoDraft] = useState<PersonalInfo>(info);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [infoSaved, setInfoSaved] = useState(false);
+  const [infoError, setInfoError] = useState("");
 
-  const saveInfo = () => { setInfo(infoDraft); setEditingInfo(false); };
-  const cancelInfo = () => { setInfoDraft(info); setEditingInfo(false); };
-  const setField = (key: keyof PersonalInfo) => (v: string) =>
-    setInfoDraft((d) => ({ ...d, [key]: v }));
-
-  /* Teaching Preferences */
-  const [prefs, setPrefs] = useState<TeachingPref[]>([
-    { label: "Online",        options: ["Preferred", "Not Preferred", "Neutral"], value: "Preferred",     bg: "bg-blue-50",   activeBg: "bg-blue-100",   iconColor: "text-blue-500" },
-    { label: "One to One",    options: ["Preferred", "Not Preferred", "Neutral"], value: "Preferred",     bg: "bg-purple-50", activeBg: "bg-purple-100", iconColor: "text-purple-500" },
-    { label: "Group Session", options: ["Yes", "No"],                             value: "Yes",            bg: "bg-indigo-50", activeBg: "bg-indigo-100", iconColor: "text-indigo-500" },
-    { label: "Home Tutoring", options: ["Yes", "No"],                             value: "No",             bg: "bg-orange-50", activeBg: "bg-orange-100", iconColor: "text-orange-400" },
-  ]);
+  /* ── Teaching Prefs ────────────────────────────────────────────── */
+  const [prefs, setPrefs] = useState<TeachingPref[]>(
+    DEFAULT_PREFS.map(p => ({ ...p, value: p.options[0] }))
+  );
   const [editingPrefs, setEditingPrefs] = useState(false);
   const [prefsDraft, setPrefsDraft] = useState<TeachingPref[]>(prefs);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
+  const [prefsError, setPrefsError] = useState("");
 
-  const savePrefs = () => { setPrefs(prefsDraft); setEditingPrefs(false); };
-  const cancelPrefs = () => { setPrefsDraft(prefs); setEditingPrefs(false); };
+  /* ── Sync from user object when loaded ────────────────────────── */
+  useEffect(() => {
+    if (user) {
+      const newBio = user.bio || "";
+      setBio(newBio);
+      setBioDraft(newBio);
 
-  const prefIcons: Record<string, React.ReactNode> = {
-    "Online":        <Monitor className="w-5 h-5" />,
-    "One to One":    <User className="w-5 h-5" />,
-    "Group Session": <Users className="w-5 h-5" />,
-    "Home Tutoring": <Home className="w-5 h-5" />,
+      const newInfo: PersonalInfo = {
+        dob:           user.dob           || "",
+        qualification: user.qualification || "",
+        gender:        user.gender        || "",
+        experience:    user.experience    || "",
+        languages:     user.languages     || "",
+        subjects:      user.subjects      || "",
+      };
+      setInfo(newInfo);
+      setInfoDraft(newInfo);
+
+      const newPrefs = DEFAULT_PREFS.map(p => ({
+        ...p,
+        value: user[p.key] || p.options[0],
+      }));
+      setPrefs(newPrefs);
+      setPrefsDraft(newPrefs);
+    }
+  }, [user]);
+
+  /* ── Generic save helper ───────────────────────────────────────── */
+  const saveToBackend = async (
+    payload: Record<string, any>,
+    setError: (e: string) => void,
+    setSaving: (v: boolean) => void,
+    setSaved: (v: boolean) => void,
+  ) => {
+    setSaving(true);
+    setError("");
+    try {
+      const updated = await userService.updateUserProfile(user?.id, payload);
+      if (updated) {
+        onProfileUpdate(updated);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  /* ── Bio handlers ──────────────────────────────────────────────── */
+  const saveBio = async () => {
+    await saveToBackend({ bio: bioDraft }, setBioError, setSavingBio, setBioSaved);
+    setBio(bioDraft);
+    setEditingBio(false);
+  };
+  const cancelBio = () => { setBioDraft(bio); setEditingBio(false); setBioError(""); };
+
+  /* ── Info handlers ─────────────────────────────────────────────── */
+  const saveInfo = async () => {
+    await saveToBackend(infoDraft, setInfoError, setSavingInfo, setInfoSaved);
+    setInfo(infoDraft);
+    setEditingInfo(false);
+  };
+  const cancelInfo = () => { setInfoDraft(info); setEditingInfo(false); setInfoError(""); };
+  const setField = (key: keyof PersonalInfo) => (v: string) =>
+    setInfoDraft(d => ({ ...d, [key]: v }));
+
+  /* ── Prefs handlers ────────────────────────────────────────────── */
+  const savePrefs = async () => {
+    const payload = Object.fromEntries(prefsDraft.map(p => [p.key, p.value]));
+    await saveToBackend(payload, setPrefsError, setSavingPrefs, setPrefsSaved);
+    setPrefs(prefsDraft);
+    setEditingPrefs(false);
+  };
+  const cancelPrefs = () => { setPrefsDraft(prefs); setEditingPrefs(false); setPrefsError(""); };
+
+  /* ── Loading state ─────────────────────────────────────────────── */
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+        <p className="text-sm text-gray-500 font-medium">Loading details...</p>
+      </div>
+    );
+  }
+
+  /* ── Save/Cancel button helper ─────────────────────────────────── */
+  const SaveCancelBtns = ({
+    onSave, onCancel, saving, saved,
+  }: { onSave: () => void; onCancel: () => void; saving: boolean; saved: boolean }) => (
+    <div className="flex gap-1.5 items-center">
+      {saved && (
+        <span className="flex items-center gap-1 text-xs text-green-600 font-medium animate-pulse mr-1">
+          <BadgeCheck className="w-3.5 h-3.5" /> Saved!
+        </span>
+      )}
+      <button
+        onClick={onSave}
+        disabled={saving}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition disabled:opacity-50"
+      >
+        {saving ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" /> : <Check className="w-3 h-3" />}
+        {saving ? "Saving…" : "Save"}
+      </button>
+      <button
+        onClick={onCancel}
+        disabled={saving}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition disabled:opacity-50"
+      >
+        <X className="w-3 h-3" /> Cancel
+      </button>
+    </div>
+  );
+
+  const ErrorAlert = ({ msg, onClose }: { msg: string; onClose: () => void }) =>
+    msg ? (
+      <div className="mt-2 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 rounded-xl flex items-center justify-between">
+        <span>{msg}</span>
+        <button onClick={onClose} className="text-red-500 hover:text-red-700 ml-2"><X className="w-3 h-3" /></button>
+      </div>
+    ) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -161,29 +288,29 @@ export default function DetailsTab() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-bold text-gray-800">About Me</h3>
           {editingBio ? (
-            <div className="flex gap-1.5">
-              <button onClick={saveBio} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition">
-                <Check className="w-3 h-3" /> Save
-              </button>
-              <button onClick={cancelBio} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
-                <X className="w-3 h-3" /> Cancel
-              </button>
-            </div>
+            <SaveCancelBtns onSave={saveBio} onCancel={cancelBio} saving={savingBio} saved={bioSaved} />
           ) : (
-            <button onClick={() => { setBioDraft(bio); setEditingBio(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+            <button
+              onClick={() => { setBioDraft(bio); setEditingBio(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
+            >
               <Edit3 className="w-3 h-3" /> Edit
             </button>
           )}
         </div>
+        <ErrorAlert msg={bioError} onClose={() => setBioError("")} />
         {editingBio ? (
           <textarea
             value={bioDraft}
             onChange={(e) => setBioDraft(e.target.value)}
             rows={4}
+            maxLength={500}
             className="w-full text-xs border border-indigo-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none leading-relaxed"
           />
         ) : (
-          <p className="text-xs text-gray-500 leading-relaxed">{bio}</p>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            {bio || <span className="italic text-gray-400">No bio added yet. Click Edit to add one.</span>}
+          </p>
         )}
       </div>
 
@@ -192,25 +319,22 @@ export default function DetailsTab() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-800">Personal Information</h3>
           {editingInfo ? (
-            <div className="flex gap-1.5">
-              <button onClick={saveInfo} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition">
-                <Check className="w-3 h-3" /> Save
-              </button>
-              <button onClick={cancelInfo} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
-                <X className="w-3 h-3" /> Cancel
-              </button>
-            </div>
+            <SaveCancelBtns onSave={saveInfo} onCancel={cancelInfo} saving={savingInfo} saved={infoSaved} />
           ) : (
-            <button onClick={() => { setInfoDraft(info); setEditingInfo(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+            <button
+              onClick={() => { setInfoDraft(info); setEditingInfo(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
+            >
               <Edit3 className="w-3 h-3" /> Edit
             </button>
           )}
         </div>
+        <ErrorAlert msg={infoError} onClose={() => setInfoError("")} />
         <div className="grid grid-cols-2 gap-y-3 gap-x-6">
           <InfoRow icon={<CalIcon />}      label="Date of Birth"  value={editingInfo ? infoDraft.dob           : info.dob}           editing={editingInfo} onChange={setField("dob")}           />
           <InfoRow icon={<GraduateIcon />} label="Qualification"  value={editingInfo ? infoDraft.qualification : info.qualification}  editing={editingInfo} onChange={setField("qualification")} />
           <InfoRow icon={<GenderIcon />}   label="Gender"         value={editingInfo ? infoDraft.gender        : info.gender}         editing={editingInfo} onChange={setField("gender")}        options={["Male", "Female", "Other"]} />
-          <InfoRow icon={<StarIcon />}     label="Experience"     value={editingInfo ? infoDraft.experience    : info.experience}     editing={editingInfo} onChange={setField("experience")}    options={["1+ Years", "2+ Years", "3+ Years", "4+ Years", "5+ Years", "6+ Years", "8+ Years", "10+ Years"]} />
+          <InfoRow icon={<StarIcon />}     label="Experience"     value={editingInfo ? infoDraft.experience    : info.experience}     editing={editingInfo} onChange={setField("experience")}    options={["1+ Years","2+ Years","3+ Years","4+ Years","5+ Years","6+ Years","8+ Years","10+ Years"]} />
           <InfoRow icon={<LangIcon />}     label="Languages"      value={editingInfo ? infoDraft.languages     : info.languages}      editing={editingInfo} onChange={setField("languages")}     />
           <InfoRow icon={<SubjectIcon />}  label="Subjects"       value={editingInfo ? infoDraft.subjects      : info.subjects}       editing={editingInfo} onChange={setField("subjects")}      />
         </div>
@@ -221,20 +345,17 @@ export default function DetailsTab() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-800">Teaching Preference</h3>
           {editingPrefs ? (
-            <div className="flex gap-1.5">
-              <button onClick={savePrefs} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition">
-                <Check className="w-3 h-3" /> Save
-              </button>
-              <button onClick={cancelPrefs} className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition">
-                <X className="w-3 h-3" /> Cancel
-              </button>
-            </div>
+            <SaveCancelBtns onSave={savePrefs} onCancel={cancelPrefs} saving={savingPrefs} saved={prefsSaved} />
           ) : (
-            <button onClick={() => { setPrefsDraft(prefs); setEditingPrefs(true); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+            <button
+              onClick={() => { setPrefsDraft(prefs); setEditingPrefs(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
+            >
               <Edit3 className="w-3 h-3" /> Edit
             </button>
           )}
         </div>
+        <ErrorAlert msg={prefsError} onClose={() => setPrefsError("")} />
         <div className="grid grid-cols-4 gap-3">
           {(editingPrefs ? prefsDraft : prefs).map((pref, idx) => (
             <div key={pref.label} className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl ${pref.bg}`}>

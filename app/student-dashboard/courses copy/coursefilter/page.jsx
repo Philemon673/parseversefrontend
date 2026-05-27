@@ -1,6 +1,7 @@
 import { Search, Filter } from "lucide-react";
 
 export default function CourseFilters({ courseTabs, activeTab, onTabChange }) {
+  if (!courseTabs) return null;
   return (
     <div className="bg-white flex items-center justify-between px-4 py-2 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex items-center gap-1">

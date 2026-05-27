@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { enrollInCourse } from "../../../lib/courseService";
 import {
   X,
   CreditCard,
@@ -16,6 +17,8 @@ export default function PaymentModal({ isOpen, onClose, course }) {
   const router = useRouter();
   const [step, setStep] = useState(1); // 1: Payment Method, 2: Card Details, 3: Success
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     phoneNumber: '',
     email: '',
@@ -26,15 +29,25 @@ export default function PaymentModal({ isOpen, onClose, course }) {
   const handleStartLearning = () => {
     onClose();
     setStep(1);
-    router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`);
+    const url = course.type === "Hardcopy"
+      ? `/student-dashboard/coursedetails/courses/hardcopy?courseId=${course.id}`
+      : `/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`;
+    router.push(url);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setStep(3);
-    setTimeout(() => {
-      handleStartLearning();
-    }, 3000);
+    setLoading(true);
+    setError("");
+    try {
+      await enrollInCourse(course.id);
+      setStep(3);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to complete enrollment. Please check your details and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -200,19 +213,27 @@ export default function PaymentModal({ isOpen, onClose, course }) {
                 <span>Your payment information is secure and encrypted</span>
               </div>
 
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100">
+                  {error}
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => setStep(1)}
-                  className="flex-1 py-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-bold transition"
+                  className="flex-1 py-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-bold transition disabled:opacity-50"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition"
+                  disabled={loading}
+                  className="flex-1 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition disabled:bg-indigo-400"
                 >
-                  Complete Payment
+                  {loading ? "Processing..." : "Complete Payment"}
                 </button>
               </div>
             </form>

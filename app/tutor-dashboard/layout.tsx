@@ -2,17 +2,18 @@
 
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import Sidebar from "@/component/Sidebar";
-import Navbar from "@/component/Navbar";
+import Sidebar from "@/tutor-component/sidebar";
+import Navbar from "@/tutor-component/navbar";
+import { NotificationProvider } from "@/lib/notification-context";
+import { AuthProvider } from "@/lib/auth-context";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-// ── Add pages where Navbar should hide on scroll ──────────────────────────────
+// ── Pages where Navbar hides on scroll ────────────────────────────────────────
 const HIDE_ON_SCROLL_PAGES = [
-  
-  
+  "/tutor-dashboard/chat",
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -21,11 +22,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hideOnScroll = HIDE_ON_SCROLL_PAGES.includes(pathname);
-  
+  const isSessionPage = pathname.includes("/sessions/");
 
   useEffect(() => {
-    // Reset to visible on every route change
-    
+    // Reset navbar to visible on every route change
+    setNavbarVisible(true);
 
     if (!hideOnScroll) return;
 
@@ -52,25 +53,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [pathname, hideOnScroll]);
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex flex-1 flex-col">
+    <AuthProvider>
+      <NotificationProvider>
+        <div className="flex min-h-screen">
+          {!isSessionPage && <Sidebar />}
+          <div className="flex flex-1 flex-col">
 
-        {/* Navbar — slides up when scrolling, reappears when stopped */}
-        <div
-          className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${navbarVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-full pointer-events-none"
-            }`}
-        >
-          <Navbar />
+            {/* Navbar — slides up when scrolling, reappears when stopped */}
+            {!isSessionPage && (
+              <div
+                className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${
+                  navbarVisible
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-full pointer-events-none"
+                }`}
+              >
+                <Navbar />
+              </div>
+            )}
+
+            <main className={`flex-1 overflow-y-auto bg-[#f2f3fa] ${isSessionPage ? "p-0" : "p-6"}`}>
+              {children}
+            </main>
+
+          </div>
         </div>
-
-        <main className="flex-1 overflow-y-auto bg-[#f2f3fa] p-6">
-          {children}
-        </main>
-
-      </div>
-    </div>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

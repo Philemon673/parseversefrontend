@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,12 +15,10 @@ export default function SignUpForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState("STUDENT");
-  const [field, setField] = useState("");
-  const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signup } = require("@/lib/auth-context").useAuth();
-  const router = require("next/navigation").useRouter();
+  const { signup } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,12 +33,8 @@ export default function SignUpForm() {
     try {
       const name = `${firstName} ${lastName}`.trim();
       const userData = { name, firstName, lastName, email, password, role };
-      if (role !== "STUDENT") {
-        userData.field = field;
-        userData.bio = bio;
-      }
       const user = await signup(userData);
-      
+
       if (user.role === "STUDENT") router.push("/student-dashboard/Home");
       else if (user.role === "MENTOR") router.push("/mentor-dashboard/Home");
       else if (user.role === "TUTOR") router.push("/tutor-dashboard/Home");
@@ -98,31 +94,6 @@ export default function SignUpForm() {
           </select>
         </div>
 
-        {role !== "STUDENT" && (
-          <>
-            <div className="space-y-1 mt-3">
-              <label className="text-sm font-semibold text-gray-800">Field of Expertise</label>
-              <input
-                type="text"
-                required
-                value={field}
-                onChange={(e) => setField(e.target.value)}
-                placeholder="e.g. Data Science, Web Development"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition placeholder-gray-400"
-              />
-            </div>
-            <div className="space-y-1 mt-3">
-              <label className="text-sm font-semibold text-gray-800">Bio</label>
-              <textarea
-                required
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about your experience (min 20 characters)"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition placeholder-gray-400 min-h-[80px]"
-              />
-            </div>
-          </>
-        )}
 
         <div className="space-y-1 mt-3">
           <label className="text-sm font-semibold text-gray-800">Email Address</label>

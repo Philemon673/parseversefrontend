@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { getCourse, getCourseModules } from "@/lib/courseService";
+import { getCourseReviews } from "@/lib/reviewService";
+import { FileText } from "lucide-react";
 import {
   ThumbsUp,
   Heart,
@@ -262,7 +266,7 @@ function CommentItem({ comment }) {
   return (
     <div className="flex items-start gap-3">
       <img
-        src={comment.avatar}
+        src={comment.avatar || "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80"}
         alt={comment.name}
         className="w-9 h-9 rounded-full object-cover flex-shrink-0"
       />
@@ -295,67 +299,112 @@ function CommentItem({ comment }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+function CoursePlayerPageContent() {
+  const searchParams = useSearchParams();
+  const courseId = searchParams.get("courseId");
 
-export default function CoursePlayerPage() {
-  const [activeCourseId, setActiveCourseId] = useState(0);
+  const [course, setCourse] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedModule, setSelectedModule] = useState(null);
+  
   const [activeTab, setActiveTab] = useState("Description");
-  const [comment, setComment] = useState("");
-  const [allComments, setAllComments] = useState(commentsData);
+  const [replyText, setReplyText] = useState({});
   const [playing, setPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Get current course based on active ID
-  const currentCourse = coursesData.find(course => course.id === activeCourseId) || coursesData[0];
-  
-  // Get other courses for the sidebar (excluding current)
-  const relatedCourses = coursesData.filter(course => course.id !== activeCourseId);
+  useEffect(() => {
+    if (!courseId) return;
 
-  function handleAddComment() {
-    if (!comment.trim()) return;
-    setAllComments((prev) => [
-      {
-        id: Date.now(),
-        name: "You",
-        time: "just now",
-        text: comment.trim(),
-        likes: 0,
-        avatar: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80",
-      },
-      ...prev,
-    ]);
-    setComment("");
-  }
+    async function loadCourseDetails() {
+      try {
+        setLoading(true);
+        // Load Course shell
+        const courseData = await getCourse(courseId);
+        setCourse(courseData.data || courseData);
 
-  function handleCourseSelect(courseId) {
-    setActiveCourseId(courseId);
-    setActiveTab("Description");
-    setPlaying(false);
-    setIsFullscreen(false);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Load Modules
+        const modulesData = await getCourseModules(courseId);
+        const mods = modulesData.data || modulesData || [];
+        setModules(mods);
+        if (mods.length > 0) {
+          setSelectedModule(mods[0]);
+        }
+
+        // Load Course Reviews
+        const reviewsData = await getCourseReviews(courseId);
+        setReviews(reviewsData.reviews || reviewsData || []);
+      } catch (err) {
+        console.error("Failed to load course details for preview", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
+
+    loadCourseDetails();
+  }, [courseId]);
 
   function toggleFullscreen() {
     setIsFullscreen(!isFullscreen);
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#f2f3fa]">
+        <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#f2f3fa] text-slate-500">
+        <p className="text-base font-bold">Course Not Found</p>
+      </div>
+    );
+  }
+
+  // Calculate ratings breakdown
+  const totalReviews = reviews.length;
+  const ratingDistribution = [0, 0, 0, 0, 0]; // 1 to 5 star count
+  let sumRatings = 0;
+  
+  reviews.forEach((r) => {
+    const starIdx = Math.min(Math.max(Math.floor(r.rating) - 1, 0), 4);
+    ratingDistribution[starIdx] += 1;
+    sumRatings += r.rating;
+  });
+
+  const avgRating = totalReviews > 0 ? (sumRatings / totalReviews).toFixed(1) : "0.0";
+
+  // Build the embed video URL for active module
+  const getEmbedUrl = (mod) => {
+    if (!mod) return null;
+    if (mod.videoEmbedUrl) return mod.videoEmbedUrl;
+    if (mod.videoId) {
+      return `https://iframe.mediadelivery.net/embed/374163/${mod.videoId}`;
+    }
+    return null;
+  };
+
+  const activeEmbedUrl = getEmbedUrl(selectedModule);
+
   return (
     <div
-      className="min-h-screen p-4 flex flex-col gap-4"
+      className="min-h-screen p-6 flex flex-col gap-6"
       style={{ background: "linear-gradient(135deg, #ede9fe 0%, #f5f3ff 50%, #eef2ff 100%)" }}
     >
       {/* Fullscreen Video Player Modal */}
-      {isFullscreen && (
+      {isFullscreen && selectedModule && (
         <div className="fixed inset-0 z-50 bg-black flex flex-col">
           {/* Fullscreen Header */}
           <div className="bg-black/80 px-6 py-3 flex items-center justify-between absolute top-0 left-0 right-0 z-10">
             <div className="flex items-center gap-3">
-              <Play className="w-5 h-5 text-red-500" fill="red" />
+              <Play className="w-5 h-5 text-indigo-500" fill="indigo" />
               <div>
-                <h2 className="text-white font-semibold text-sm">{currentCourse.title}</h2>
-                <p className="text-slate-400 text-xs">{currentCourse.instructor}</p>
+                <h2 className="text-white font-semibold text-sm">{selectedModule.title}</h2>
+                <p className="text-slate-400 text-xs">{course.title}</p>
               </div>
             </div>
             <button
@@ -368,305 +417,310 @@ export default function CoursePlayerPage() {
 
           {/* Fullscreen Video Content */}
           <div className="flex-1 flex items-center justify-center relative">
-            <img
-              src={currentCourse.image}
-              alt="course video"
-              className="w-full h-full object-contain"
-            />
-            <button
-              onClick={() => setPlaying(!playing)}
-              className="absolute inset-0 flex items-center justify-center group"
-            >
-              <div className="w-20 h-20 rounded-full bg-white/20 border-2 border-white/60 flex items-center justify-center group-hover:bg-white/30 transition backdrop-blur-sm">
-                <Play className="w-10 h-10 text-white ml-1" fill="white" />
+            {activeEmbedUrl ? (
+              <iframe
+                src={activeEmbedUrl}
+                loading="lazy"
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center text-slate-400">
+                <FileText className="w-16 h-16 text-indigo-400 mb-2" />
+                <p className="font-bold text-white text-base">This is a PDF/reading module</p>
+                {selectedModule.pdfUrl && (
+                  <a href={selectedModule.pdfUrl} target="_blank" rel="noreferrer" className="mt-4 px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-755 transition">
+                    Open PDF Document
+                  </a>
+                )}
               </div>
-            </button>
-          </div>
-
-          {/* Fullscreen Controls */}
-          <div className="bg-black/80 px-6 py-4 absolute bottom-0 left-0 right-0 z-10">
-            <div className="flex flex-col gap-3">
-              {/* Progress Bar */}
-              <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden cursor-pointer">
-                <div className="h-full bg-red-500 rounded-full" style={{ width: `${currentCourse.percent}%` }} />
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button className="text-white hover:text-white/80 transition">
-                    <Play className="w-5 h-5" fill="white" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <SkipForward className="w-5 h-5" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <Volume2 className="w-5 h-5" />
-                  </button>
-                  <span className="text-white/90 text-sm font-medium">21:18 / {currentCourse.hours}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button className="text-white hover:text-white/80 transition">
-                    <Settings className="w-5 h-5" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <LayoutTemplate className="w-5 h-5" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <Subtitles className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={toggleFullscreen}
-                    className="text-white hover:text-white/80 transition"
-                  >
-                    <Minimize className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      <div className="flex gap-4 items-start">
-
-        {/* ── Left Column ───────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
-
-          {/* Video Player */}
-          <div className="bg-black rounded-2xl overflow-hidden shadow-lg">
-            <div className="relative w-full" style={{ paddingBottom: "52%" }}>
-              <img
-                src={currentCourse.image}
-                alt="course video"
-                className="absolute inset-0 w-full h-full object-cover opacity-80"
-              />
-              <button 
-                className="absolute top-3 right-3 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="w-4 h-4 text-white" />
-              </button>
-              <button
-                onClick={() => setPlaying(!playing)}
-                className="absolute inset-0 flex items-center justify-center group"
-              >
-                <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/60 flex items-center justify-center group-hover:bg-white/30 transition">
-                  <Play className="w-6 h-6 text-white ml-1" fill="white" />
+      {/* Main Preview Container */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* Left Column: Player & Course details */}
+        <div className="flex-1 flex flex-col gap-6 min-w-0 w-full">
+          
+          {/* Module content player */}
+          <div className="bg-black rounded-3xl overflow-hidden shadow-lg border border-slate-900 flex flex-col">
+            <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+              {selectedModule ? (
+                activeEmbedUrl ? (
+                  <iframe
+                    src={activeEmbedUrl}
+                    loading="lazy"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                    allowFullScreen
+                    className="absolute top-0 left-0 w-full h-full border-0"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-955 text-slate-400 p-6 text-center">
+                    <FileText className="w-14 h-14 text-indigo-400 mb-3 animate-pulse" />
+                    <h3 className="font-bold text-white text-base leading-tight">{selectedModule.title}</h3>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm">This module contains premium reading material instead of a video course.</p>
+                    {selectedModule.pdfUrl && (
+                      <a 
+                        href={selectedModule.pdfUrl} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="mt-5 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-md shadow-indigo-900"
+                      >
+                        View PDF Document
+                      </a>
+                    )}
+                  </div>
+                )
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0d0e12] text-slate-500">
+                  <Play className="w-12 h-12 text-slate-600 mb-2" />
+                  <p className="text-xs font-semibold">No modules uploaded yet for this course</p>
                 </div>
-              </button>
+              )}
             </div>
 
-            <div className="bg-black px-4 py-2 flex flex-col gap-1.5">
-              <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden cursor-pointer">
-                <div className="h-full bg-red-500 rounded-full" style={{ width: `${currentCourse.percent}%` }} />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button className="text-white hover:text-white/80 transition">
-                    <Play className="w-4 h-4" fill="white" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <SkipForward className="w-4 h-4" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <Volume2 className="w-4 h-4" />
-                  </button>
-                  <span className="text-white/70 text-xs">21:18</span>
+            {/* In-player Controls if a video is active */}
+            {selectedModule && activeEmbedUrl && (
+              <div className="bg-[#0b0c10] px-5 py-3.5 flex items-center justify-between border-t border-white/5">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] bg-red-650 text-white font-black px-2 py-0.5 rounded tracking-wider">LIVE PREVIEW</span>
+                  <span className="text-white/80 font-bold text-xs truncate max-w-xs">{selectedModule.title}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button className="text-white hover:text-white/80 transition">
-                    <Settings className="w-4 h-4" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <LayoutTemplate className="w-4 h-4" />
-                  </button>
-                  <button className="text-white hover:text-white/80 transition">
-                    <Subtitles className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={toggleFullscreen}
-                    className="text-white hover:text-white/80 transition"
-                    title="Fullscreen"
-                  >
-                    <Maximize className="w-4 h-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={toggleFullscreen}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                >
+                  <Maximize className="w-3.5 h-3.5" /> Fullscreen
+                </button>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Course Info */}
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
-
-            {/*  Title + Instructor side by side */}
-            <div className="flex items-center justify-between">
+          {/* Course Details Info Box */}
+          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col gap-4">
+            <div className="flex items-start justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
-
-                {/* Instructor avatar */}
-                <img
-                  src={currentCourse.instructorAvatar}
-                  alt={currentCourse.instructor}
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-indigo-100 shadow-sm"
-                />
-
-                {/* Title + instructor name + updated */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold shadow">
+                  {course.instructor?.firstName?.charAt(0) || "I"}
+                </div>
                 <div>
-                  <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                    {currentCourse.title}
-                  </h1>
-                  {/*  instructor name beside title below */}
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs font-semibold text-indigo-600">
-                      {currentCourse.instructor}
-                    </span>
-                    <span className="text-slate-300 text-xs">·</span>
-                    <span className="text-xs text-slate-400">{currentCourse.updated}</span>
-                  </div>
+                  <h1 className="text-xl font-black text-slate-900 leading-tight">{course.title}</h1>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    by <span className="text-indigo-600 font-bold">{course.instructor?.firstName} {course.instructor?.lastName}</span> · {course.category} Course
+                  </p>
                 </div>
               </div>
-
-              {/* Star rating top right */}
-              <StarRating rating={currentCourse.rating} />
+              
+              <div className="flex items-center gap-1 bg-yellow-50 px-3.5 py-1.5 rounded-2xl border border-yellow-100">
+                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                <span className="text-sm font-black text-slate-800">{avgRating}</span>
+                <span className="text-[10px] text-slate-400 font-bold">({totalReviews} Reviews)</span>
+              </div>
             </div>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-              <span className="font-medium">{currentCourse.lessons} Lessons</span>
-              <span className="text-slate-300">·</span>
-              <span>{currentCourse.hours}</span>
-              <span className="text-slate-300">·</span>
-              <span className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5" fill="#f59e0b" stroke="#f59e0b" />
-                {currentCourse.percent}%
-              </span>
-              <span className="text-slate-300">·</span>
-              <span className="flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5 text-indigo-400" fill="#818cf8" />
-                {currentCourse.completedLessons} / {currentCourse.totalLessons} Lessons · {currentCourse.percent}%
-              </span>
-              <span className="text-slate-300">·</span>
-              <button className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 transition">
-                <ThumbsUp className="w-3.5 h-3.5" />
-                {currentCourse.likes}
-              </button>
-              <button className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 transition">
-                <Share2 className="w-3.5 h-3.5" />
-                {currentCourse.shares} Share
-              </button>
-            </div>
+            <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-50 pt-3">
+              {course.description || "No description provided for this course."}
+            </p>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1 border-b border-slate-100 pb-2">
+            {/* Course details subtabs */}
+            <div className="flex items-center gap-1.5 border-b border-slate-100 pb-2 mt-2">
               {["Description", "Comments", "Attachment"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={
-                    "px-4 py-1.5 rounded-xl text-sm font-semibold transition " +
-                    (activeTab === tab
-                      ? "bg-indigo-600 text-white"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-slate-50")
-                  }
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 ${
+                    activeTab === tab
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                      : "text-slate-400 hover:text-slate-650 hover:bg-slate-50"
+                  }`}
                 >
-                  {tab}
-                  {tab === "Comments" && (
-                    <span className="ml-1.5 text-xs font-bold">
-                      {allComments.length}
-                    </span>
-                  )}
+                  {tab === "Comments" ? `Student Reviews (${totalReviews})` : tab}
                 </button>
               ))}
-
-              <div className="ml-auto flex items-center gap-2">
-                <div className="flex items-center gap-1 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  <span>Sort by :</span>
-                  <span className="font-medium ml-1">Recent</span>
-                  <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-                </div>
-                <button className="flex items-center gap-1.5 text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded-xl hover:bg-slate-50 transition">
-                  <Share2 className="w-3.5 h-3.5" />
-                  Share
-                </button>
-              </div>
             </div>
 
-            {/* Tab Content */}
+            {/* Subtab contents */}
             {activeTab === "Description" && (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-slate-600 leading-relaxed">
-                  {currentCourse.description}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {currentCourse.tags && currentCourse.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+              <div className="flex flex-col gap-3 py-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Level</span>
+                    <span className="text-xs font-bold text-slate-700">{course.level || "Beginner"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Price</span>
+                    <span className="text-xs font-bold text-slate-700">{course.isFree ? "Free" : `$${course.price}`}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Modules</span>
+                    <span className="text-xs font-bold text-slate-700">{modules.length} modules</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Enrolled Students</span>
+                    <span className="text-xs font-bold text-slate-700">{course._count?.enrollments || 0} students</span>
+                  </div>
                 </div>
               </div>
             )}
 
             {activeTab === "Comments" && (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=100&q=80"
-                    alt="you"
-                    className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2 bg-slate-50">
-                    <input
-                      type="text"
-                      placeholder="Add a comment..."
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
-                      className="flex-1 text-sm bg-transparent focus:outline-none placeholder-slate-400"
-                    />
-                    <button 
-                      className="text-slate-400 hover:text-slate-600 transition"
-                      onClick={handleAddComment}
-                    >
-                      <Smile className="w-4 h-4" />
-                    </button>
+              <div className="flex flex-col gap-6 py-2">
+                {/* Reviews Stats Breakdown Dashboard */}
+                <div className="flex flex-col md:flex-row gap-6 p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="flex flex-col items-center justify-center text-center px-4 border-r border-slate-150">
+                    <span className="text-3xl font-black text-slate-800">{avgRating}</span>
+                    <div className="flex items-center gap-0.5 mt-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className="w-3.5 h-3.5" 
+                          fill={star <= Math.floor(Number(avgRating)) ? "#f59e0b" : "none"} 
+                          stroke="#f59e0b" 
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest">{totalReviews} Ratings</span>
+                  </div>
+
+                  {/* Histogram ratings bars */}
+                  <div className="flex-1 flex flex-col gap-2 justify-center">
+                    {ratingDistribution.map((count, index) => {
+                      const starNum = index + 1;
+                      const percentage = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+                      return (
+                        <div key={starNum} className="flex items-center gap-3 text-xs">
+                          <span className="text-slate-550 font-bold w-3">{starNum}</span>
+                          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${percentage}%` }} />
+                          </div>
+                          <span className="text-slate-400 w-8 text-right font-semibold">{percentage}%</span>
+                        </div>
+                      );
+                    }).reverse()}
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  {allComments.map((c) => (
-                    <CommentItem key={c.id} comment={c} />
-                  ))}
+                {/* List of reviews */}
+                <div className="flex flex-col gap-5">
+                  {reviews.length > 0 ? (
+                    reviews.map((rev) => (
+                      <div key={rev.id} className="p-4 rounded-2xl border border-slate-100 flex flex-col gap-3 hover:border-indigo-100 hover:bg-slate-50/20 transition-all duration-300">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-extrabold text-xs">
+                              {rev.user ? rev.user.firstName.charAt(0) : "S"}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-slate-800 text-xs leading-snug">
+                                {rev.user ? `${rev.user.firstName} ${rev.user.lastName}` : "Student"}
+                              </h4>
+                              <p className="text-[9px] text-slate-400 font-bold">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-0.5 bg-yellow-50/60 px-2 py-0.5 rounded-lg border border-yellow-100">
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                            <span className="text-[10px] font-black text-slate-800">{rev.rating}</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          {rev.comment}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400 text-xs">
+                      No ratings or feedback reviews posted yet for this course.
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {activeTab === "Attachment" && (
-              <div className="flex flex-col gap-2 items-center justify-center py-8">
-                <p className="text-sm text-slate-400">No attachments available for this course</p>
+              <div className="flex flex-col gap-2 items-center justify-center py-8 text-slate-400 text-xs">
+                <FileText className="w-8 h-8 text-slate-350" />
+                <p className="font-bold">No attachment links uploaded</p>
               </div>
             )}
-            
           </div>
         </div>
 
-        {/* ── Right Column ──────────────────────────────────────── */}
-        <div className="w-72 flex-shrink-0 flex flex-col gap-3">
-          <h2 className="font-bold text-slate-800 text-base">Course Modules</h2>
-          {relatedCourses.map((course) => (
-            <RelatedCourseCard 
-              key={course.id} 
-              course={course}
-              isActive={course.id === activeCourseId}
-              onSelect={() => handleCourseSelect(course.id)}
-            />
-          ))}
+        {/* Right Column: Course syllabus Modules list */}
+        <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-3.5 bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+          <div className="border-b border-slate-100 pb-3">
+            <h2 className="font-black text-slate-800 text-sm">Course syllabus</h2>
+            <p className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase tracking-wider">{modules.length} Modules Uploaded</p>
+          </div>
+          
+          <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
+            {modules.length > 0 ? (
+              modules.map((mod, idx) => (
+                <ModuleSidebarItem
+                  key={mod.id}
+                  module={mod}
+                  index={idx}
+                  isActive={selectedModule?.id === mod.id}
+                  onSelect={() => {
+                    setSelectedModule(mod);
+                    setPlaying(false);
+                  }}
+                  category={course.category}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl">
+                No syllabus modules created yet.
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
     </div>
   );
 }
+
+// ── Simple Helper component for sidebar module items ───────────────────────
+function ModuleSidebarItem({ module, index, isActive, onSelect, category }) {
+  return (
+    <div
+      onClick={onSelect}
+      className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 flex items-start gap-3 ${
+        isActive
+          ? "bg-indigo-50/50 border-indigo-500 shadow-sm"
+          : "bg-white border-slate-100 hover:border-indigo-300"
+      }`}
+    >
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-xs ${
+        isActive ? "bg-indigo-600 text-white shadow-md shadow-indigo-150" : "bg-slate-50 text-slate-500 border border-slate-100"
+      }`}>
+        {index + 1}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h4 className={`font-bold text-xs leading-snug truncate ${isActive ? "text-indigo-600" : "text-slate-800"}`}>
+          {module.title}
+        </h4>
+        <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wider font-extrabold">
+          {category === "Video" ? "Video Lesson" : "Reading Lecture"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default function CoursePlayerPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-[#f2f3fa]">
+        <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+      </div>
+    }>
+      <CoursePlayerPageContent />
+    </Suspense>
+  );
+}

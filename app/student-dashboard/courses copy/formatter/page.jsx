@@ -8,3 +8,7 @@ export function formatCurrency(amount) {
 }
 
 export { CURRENCY_SYMBOL };
+
+export default function DummyFormatterPage() {
+  return null;
+}

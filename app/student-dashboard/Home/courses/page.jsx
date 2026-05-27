@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getAllCourses } from "@/lib/courseService";
 import {
   Bookmark,
   SlidersHorizontal,
@@ -100,18 +102,39 @@ function RoleBadge({ role }) {
 // ── Course Card ───────────────────────────────────────────────────────────────
 
 function CourseCard({ course, index }) {
+  const router = useRouter();
   const [saved, setSaved] = useState(false);
+
+  const normLevel = course.level === "BEGINNER" ? "Beginner" : course.level === "INTERMEDIATE" ? "Intermediate" : course.level === "ADVANCED" ? "Pro" : course.level;
+  const instructorName = course.instructor 
+    ? `${course.instructor.firstName} ${course.instructor.lastName}` 
+    : "Instructor";
+  const instructorRole = course.instructor?.isMentor ? "Mentor" : "Tutor";
+  const instructorSpecialty = course.instructor?.field || "Subject Specialist";
+  const instructorAvatar = course.instructor 
+    ? `${course.instructor.firstName?.[0] || ""}${course.instructor.lastName?.[0] || ""}` 
+    : "IN";
+
+  const thumbnail = course.thumbnail || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&auto=format&fit=crop&q=60";
+  const studentsCount = course._count?.enrollments !== undefined ? `${course._count.enrollments}` : "0";
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col group">
+    <div 
+      onClick={() => router.push(`/student-dashboard/coursedetails?courseId=${course.id}`)}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col group cursor-pointer"
+    >
       {/* Thumbnail */}
       <div className="relative aspect-[16/9] overflow-hidden">
         <img
-          src={course.thumbnail}
+          src={thumbnail}
           alt={course.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <button
-          onClick={() => setSaved(v => !v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSaved(v => !v);
+          }}
           className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
         >
           <Bookmark className={`w-4 h-4 transition-colors ${saved ? "fill-indigo-600 text-indigo-600" : "text-gray-400"}`} />
@@ -122,7 +145,7 @@ function CourseCard({ course, index }) {
       <div className="flex flex-col flex-1 p-4 gap-3">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 flex-1">{course.title}</h3>
-          <LevelBadge level={course.level} />
+          <LevelBadge level={normLevel} />
         </div>
 
         <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">{course.description}</p>
@@ -130,25 +153,25 @@ function CourseCard({ course, index }) {
         <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
           <div className="flex items-center gap-1">
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            <span className="font-bold text-gray-700">{course.rating}</span>
+            <span className="font-bold text-gray-700">4.8</span>
           </div>
           <span className="w-1 h-1 rounded-full bg-gray-200 inline-block" />
           <div className="flex items-center gap-1">
             <Users className="w-3.5 h-3.5" />
-            <span>{course.students} students</span>
+            <span>{studentsCount} students</span>
           </div>
         </div>
 
         <div className="border-t border-gray-50" />
 
         <div className="flex items-center gap-3">
-          <Avatar initials={course.instructor.avatar} index={index} />
+          <Avatar initials={instructorAvatar} index={index} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-gray-800">{course.instructor.name}</span>
-              <RoleBadge role={course.instructor.role} />
+              <span className="text-xs font-bold text-gray-800">{instructorName}</span>
+              <RoleBadge role={instructorRole} />
             </div>
-            <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">{course.instructor.specialty}</p>
+            <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">{instructorSpecialty}</p>
           </div>
         </div>
       </div>
@@ -334,14 +357,33 @@ function ActiveFilters({ levelFilter, roleFilter, onLevelChange, onRoleChange })
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AllCoursesPage() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage]             = useState(1);
   const [levelFilter, setLevelFilter] = useState("All");
   const [roleFilter,  setRoleFilter]  = useState("All");
 
-  // Apply filters to full dataset
-  const filtered = ALL_COURSES.filter(c => {
-    const matchLevel = levelFilter === "All" || c.level === levelFilter;
-    const matchRole  = roleFilter  === "All" || c.instructor.role === roleFilter;
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await getAllCourses();
+        setCourses(res || []);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  // Apply filters to database dataset
+  const filtered = courses.filter(c => {
+    const normLevel = c.level === "BEGINNER" ? "Beginner" : c.level === "INTERMEDIATE" ? "Intermediate" : c.level === "ADVANCED" ? "Pro" : c.level;
+    const matchLevel = levelFilter === "All" || normLevel === levelFilter;
+    
+    const role = c.instructor?.isMentor ? "Mentor" : "Tutor";
+    const matchRole  = roleFilter  === "All" || role === roleFilter;
     return matchLevel && matchRole;
   });
 
@@ -355,6 +397,17 @@ export default function AllCoursesPage() {
   const handleLevelChange = (val) => { setLevelFilter(val); setPage(1); };
   const handleRoleChange  = (val) => { setRoleFilter(val);  setPage(1); };
   const handleReset       = ()    => { setLevelFilter("All"); setRoleFilter("All"); setPage(1); };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
+          <p className="text-slate-500 font-bold text-sm">Loading courses...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] font-sans">
