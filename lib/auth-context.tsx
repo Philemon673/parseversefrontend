@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import Cookies from 'js-cookie';
 import { authApi, clearTokens } from '@/lib/api';
 
 interface User {
@@ -99,6 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('accessToken', data.accessToken);
       if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
       
+      // Set a cookie so Next.js Edge Middleware can read the role for route protection
+      Cookies.set('userRole', userSession.role, { 
+        expires: 1, // 1 day
+        path: '/', 
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production' 
+      });
+      
       return userSession;
     } catch (error) {
       console.error('Login failed:', error);
@@ -154,6 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('currentUser');
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      // Clear the role cookie used by middleware
+      Cookies.remove('userRole', { path: '/' });
       // Keys used by lib/api.ts
       clearTokens();
     }
