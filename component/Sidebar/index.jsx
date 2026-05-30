@@ -9,16 +9,18 @@ import {
   FolderOpen,
   MessageCircle,
   Bell,
+  Calendar,
   Settings,
 } from "lucide-react";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/tutor-dashboard/Home" },
-  { icon: BookOpen, label: "Course", href: "/tutor-dashboard/courses" },
-  { icon: FolderOpen, label: "Profile", href: "/tutor-dashboard/profile" },
-  { icon: MessageCircle, label: "Chat", href: "/tutor-dashboard/chat" },
-  { icon: MessageCircle, label: "Groups", href: "/tutor-dashboard/groups" },
-  { icon: Bell, label: "Notifications", href: "/tutor-dashboard/notification", badge: 2 },
+  { icon: Home,          label: "Home",          href: "/tutor-dashboard/Home" },
+  { icon: BookOpen,      label: "Course",         href: "/tutor-dashboard/courses" },
+  { icon: FolderOpen,    label: "Profile",        href: "/tutor-dashboard/profile" },
+  { icon: MessageCircle, label: "Chat",           href: "/tutor-dashboard/chat" },
+  { icon: MessageCircle, label: "Groups",         href: "/tutor-dashboard/groups" },
+  { icon: Calendar,      label: "Sessions",       href: "/tutor-dashboard/sessions" },
+  { icon: Bell,          label: "Notifications",  href: "/tutor-dashboard/notification", badge: 2 },
 ];
 
 export default function Sidebar() {
@@ -91,19 +93,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* User Profile */}
-        <div className="flex items-center gap-3 px-3 pt-5 border-t border-white/20 mt-5">
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-              MN
-            </div>
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full" />
-          </div>
-          <div>
-            <div className="text-white text-sm font-semibold">Martin Nel</div>
-            <div className="text-green-400 text-xs">● Online</div>
-          </div>
-        </div>
+       
       </div>
     </aside>
   );

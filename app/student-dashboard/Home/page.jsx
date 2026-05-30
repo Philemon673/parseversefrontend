@@ -24,6 +24,7 @@ import ScrollToTop from "../../../screens/scroll";
 import { getMyEnrolledCourses } from "../../../lib/courseService";
 import { useAuth } from "@/lib/auth-context";
 import { BookOpen, Award, Clock } from "lucide-react";
+import CommunityFeed from "@/component/CommunityFeed";
 
 const posts = [
   {
@@ -619,11 +620,7 @@ export default function PostsSection() {
           {/* Social Feed Posts */}
           <div className="flex flex-col gap-6 mt-2">
             <h3 className="font-black text-slate-800 text-sm px-1">Community Feed</h3>
-            
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-            <VideoCard post={videoPost} />
+            <CommunityFeed />
           </div>
         </div>
 

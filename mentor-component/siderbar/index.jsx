@@ -10,18 +10,20 @@ import {
   FolderOpen,
   MessageCircle,
   Bell,
+  Calendar,
   LogOut,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-context";
 import { useAuth } from "@/lib/auth-context";
 
 const navItems = [
-  { icon: Home, label: "Home", href: "/mentor-dashboard/Home" },
-  { icon: BookOpen, label: "Course", href: "/mentor-dashboard/courses" },
-  { icon: FolderOpen, label: "Profile", href: "/mentor-dashboard/profile" },
-  { icon: MessageCircle, label: "Groups", href: "/mentor-dashboard/groups" },
-  { icon: MessageCircle, label: "Chat", href: "/mentor-dashboard/chat" },
-  { icon: Bell, label: "Notifications", href: "/mentor-dashboard/notification" },
+  { icon: Home,          label: "Home",          href: "/mentor-dashboard/Home" },
+  { icon: BookOpen,      label: "Course",         href: "/mentor-dashboard/courses" },
+  { icon: FolderOpen,    label: "Profile",        href: "/mentor-dashboard/profile" },
+  { icon: MessageCircle, label: "Groups",         href: "/mentor-dashboard/groups" },
+  { icon: MessageCircle, label: "Chat",           href: "/mentor-dashboard/chat" },
+  { icon: Calendar,      label: "Sessions",       href: "/mentor-dashboard/sessions" },
+  { icon: Bell,          label: "Notifications",  href: "/mentor-dashboard/notification" },
 ];
 
 // ── Logout Button with confirmation modal ─────────────────────────────────────

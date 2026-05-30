@@ -297,7 +297,7 @@ export default function UploadVideoPage() {
 
       setProgress(100);
       alert("Short created successfully!");
-      router.push("/mentor-dashboard/Home");
+      router.push("/tutor-dashboard/Home");
     } catch (err) {
       console.error(err);
       alert("Failed to save short: " + (err.message || err));
@@ -474,7 +474,7 @@ export default function UploadVideoPage() {
               {/* External Link */}
               <div>
                 <FieldLabel
-                  label="Mentor Profile / Course Link"
+                  label="Tutor Profile / Course Link"
                   optional
                   tooltip="Direct viewers from the home page to your profile or course details page."
                 />
@@ -486,7 +486,7 @@ export default function UploadVideoPage() {
                     onChange={(e) => setVideoLink(e.target.value)}
                     onFocus={() => setFocusedField("link")}
                     onBlur={() => setFocusedField(null)}
-                    placeholder="https://parseverse.com/mentor-dashboard/profile..."
+                    placeholder="https://parseverse.com/tutor-dashboard/profile..."
                     className="flex-1 bg-transparent text-sm font-medium text-[#2d2560] placeholder-[#c5c0df] focus:outline-none py-1"
                   />
                 </div>

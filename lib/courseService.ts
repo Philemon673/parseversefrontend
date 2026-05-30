@@ -200,3 +200,13 @@ export async function getInstructorCourses() {
     throw new Error('Failed to fetch instructor courses');
   }
 }
+
+/** Delete a course by its ID */
+export async function deleteCourse(courseId: string) {
+  try {
+    return await api.delete(`/courses/${courseId}`);
+  } catch (err) {
+    throw new Error('Failed to delete course');
+  }
+}
+

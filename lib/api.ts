@@ -10,22 +10,22 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("pv_access_token");
+  return localStorage.getItem("accessToken");
 }
 
 function getRefreshToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("pv_refresh_token");
+  return localStorage.getItem("refreshToken");
 }
 
 export function saveTokens(access: string, refresh: string) {
-  localStorage.setItem("pv_access_token", access);
-  localStorage.setItem("pv_refresh_token", refresh);
+  localStorage.setItem("accessToken", access);
+  localStorage.setItem("refreshToken", refresh);
 }
 
 export function clearTokens() {
-  localStorage.removeItem("pv_access_token");
-  localStorage.removeItem("pv_refresh_token");
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
 }
 
 // ── Core fetch wrapper ───────────────────────────────────────────────────────

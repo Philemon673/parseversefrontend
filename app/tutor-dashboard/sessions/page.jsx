@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Video,
@@ -13,61 +13,78 @@ import {
   Copy,
 } from "lucide-react";
 import CreateSessionModal from "@/component/sessions/CreateSessionModal";
+import { getMyLiveSessions, createLiveSession } from "@/lib/sessionService";
 
 export default function TutorSessionsPage() {
   const router = useRouter();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [sessions, setSessions] = useState([
-    {
-      id: "react-19-deep-dive",
-      title: "Introduction to React 19 — Live Deep Dive",
-      time: "Starts in 10 mins",
-      students: 18,
-      duration: "60 mins",
-      isLive: true,
-      link:
-        typeof window !== "undefined"
-          ? `${window.location.origin}/student-dashboard/sessions/react-19-deep-dive`
-          : "",
-    },
-    {
-      id: "system-design-2",
-      title: "Advanced System Design Q&A",
-      time: "Tomorrow, 10:00 AM",
-      students: 45,
-      duration: "90 mins",
-      isLive: false,
-      link:
-        typeof window !== "undefined"
-          ? `${window.location.origin}/student-dashboard/sessions/system-design-2`
-          : "",
-    },
-  ]);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreateSession = (sessionData) => {
-    const newSession = {
-      id: sessionData.sessionId,
-      title: sessionData.title,
-      time: sessionData.isInstant ? "Starting now" : sessionData.scheduledTime,
-      students: 0,
-      duration: `${sessionData.duration} mins`,
-      isLive: sessionData.isInstant,
-      link: sessionData.link,
-    };
-    setSessions([newSession, ...sessions]);
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const data = await getMyLiveSessions();
+      setSessions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch sessions", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const handleCreateSession = async (sessionData) => {
+    try {
+      const newSession = await createLiveSession({
+        title: sessionData.title,
+        description: sessionData.description,
+        scheduledTime: sessionData.scheduledTime,
+        duration: sessionData.duration,
+        maxStudents: sessionData.maxStudents,
+        isInstant: sessionData.isInstant,
+        link: sessionData.link,
+      });
+      setSessions((prev) => [newSession, ...prev]);
+    } catch (err) {
+      console.error("Failed to create session", err);
+      alert("Error creating session.");
+    }
   };
 
   const copySessionLink = (link) => {
     navigator.clipboard.writeText(link);
+    alert("Session link copied to clipboard!");
   };
 
   const handleStartSession = (id) => {
     router.push(`/tutor-dashboard/sessions/${id}`);
   };
 
+  const checkIsLive = (session) => {
+    if (session.isInstant) return true;
+    if (session.status === "Live") return true;
+    if (!session.scheduledTime) return false;
+
+    const scheduledDate = new Date(session.scheduledTime).getTime();
+    const now = Date.now();
+    const diffMins = (scheduledDate - now) / 60000;
+
+    // "within 30 mins or already started/passed"
+    return diffMins <= 30;
+  };
+
+  const formatSessionTime = (session) => {
+    if (session.isInstant) return "Started instantly";
+    if (!session.scheduledTime) return "Not scheduled";
+    return new Date(session.scheduledTime).toLocaleString();
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-10 flex flex-col gap-10 font-sans">
-
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -87,86 +104,93 @@ export default function TutorSessionsPage() {
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
         {/* Left: Session List */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           <h2 className="text-sm font-black text-slate-700 uppercase tracking-widest px-2">
             Upcoming Sessions
           </h2>
 
-          {sessions.length === 0 ? (
+          {loading ? (
+            <div className="animate-pulse flex flex-col gap-4">
+              <div className="h-32 bg-slate-200 rounded-3xl" />
+              <div className="h-32 bg-slate-200 rounded-3xl" />
+            </div>
+          ) : sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-300">
               <Calendar className="w-12 h-12 mb-4" />
               <p className="text-sm font-semibold">No sessions yet. Create your first one!</p>
             </div>
           ) : (
-            sessions.map((session) => (
-              <div
-                key={session.id}
-                className="bg-white rounded-3xl p-8 shadow-lg border border-slate-100 hover:shadow-xl hover:border-indigo-200 transition-all group"
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div
-                    className={`w-14 h-14 shrink-0 rounded-[1.25rem] flex items-center justify-center transition-all duration-300 ${
-                      session.isLive
-                        ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
-                        : "bg-slate-100 text-slate-400"
-                    }`}
-                  >
-                    <Video className="w-6 h-6" />
-                  </div>
-
-                  <div className="flex flex-col min-w-0 flex-1">
-                    {session.isLive && (
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black uppercase tracking-widest">
-                          <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
-                          Live
-                        </span>
-                      </div>
-                    )}
-                    <h3 className="text-[17px] font-black text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors truncate">
-                      {session.title}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2.5 text-[11px] font-bold text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-300" /> {session.time}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-300" /> {session.students} Students
-                      </span>
-                      <span className="flex items-center gap-1.5 text-indigo-500">
-                        <Clock className="w-3.5 h-3.5" /> {session.duration}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => copySessionLink(session.link)}
-                      className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition"
-                      title="Copy invitation link"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleStartSession(session.id)}
-                      className={`px-8 py-3.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 ${
-                        session.isLive
-                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700"
-                          : "bg-slate-100 text-slate-400 cursor-not-allowed"
+            sessions.map((session) => {
+              const isLive = checkIsLive(session);
+              return (
+                <div
+                  key={session.id}
+                  className="bg-white rounded-3xl p-8 shadow-lg border border-slate-100 hover:shadow-xl hover:border-indigo-200 transition-all group"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div
+                      className={`w-14 h-14 shrink-0 rounded-[1.25rem] flex items-center justify-center transition-all duration-300 ${
+                        isLive
+                          ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100"
+                          : "bg-slate-100 text-slate-400"
                       }`}
                     >
-                      {session.isLive ? "Start Teaching" : "View Details"}
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                    <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
+                      <Video className="w-6 h-6" />
+                    </div>
+
+                    <div className="flex flex-col min-w-0 flex-1">
+                      {isLive && (
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black uppercase tracking-widest">
+                            <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                            Live
+                          </span>
+                        </div>
+                      )}
+                      <h3 className="text-[17px] font-black text-slate-900 leading-snug group-hover:text-indigo-600 transition-colors truncate">
+                        {session.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2.5 text-[11px] font-bold text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-300" /> {formatSessionTime(session)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5 text-slate-300" /> Max {session.maxStudents} Students
+                        </span>
+                        <span className="flex items-center gap-1.5 text-indigo-500">
+                          <Clock className="w-3.5 h-3.5" /> {session.duration} mins
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => copySessionLink(session.link)}
+                        className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition"
+                        title="Copy invitation link"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleStartSession(session.id)}
+                        className={`px-8 py-3.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 ${
+                          isLive
+                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {isLive ? "Start Teaching" : "View Details"}
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                      <button className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition">
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -193,9 +217,9 @@ export default function TutorSessionsPage() {
                 <div className="flex items-center justify-between bg-black/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 group-hover:bg-black/20 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-indigo-300" />
-                    <p className="text-xs font-bold uppercase tracking-wider opacity-80">Students</p>
+                    <p className="text-xs font-bold uppercase tracking-wider opacity-80">Sessions</p>
                   </div>
-                  <p className="text-sm font-black">1.2k</p>
+                  <p className="text-sm font-black">{sessions.length}</p>
                 </div>
               </div>
             </div>

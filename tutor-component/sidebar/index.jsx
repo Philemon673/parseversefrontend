@@ -10,7 +10,6 @@ import {
   FolderOpen,
   MessageCircle,
   Bell,
-  Calendar,
   LogOut,
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-context";
@@ -22,7 +21,6 @@ const navItems = [
   { icon: FolderOpen,    label: "Profile",        href: "/tutor-dashboard/profile" },
   { icon: MessageCircle, label: "Chat",           href: "/tutor-dashboard/chat" },
   { icon: MessageCircle, label: "Groups",         href: "/tutor-dashboard/groups" },
-  { icon: Calendar,      label: "Sessions",       href: "/tutor-dashboard/sessions" },
   { icon: Bell,          label: "Notifications",  href: "/tutor-dashboard/notification" },
 ];
 

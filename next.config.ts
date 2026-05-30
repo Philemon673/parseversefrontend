@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  transpilePackages: [
+    '@livekit/components-react',
+    '@livekit/components-core',
+    '@livekit/components-styles',
+    'livekit-client',
+  ],
 };
 
 export default nextConfig;

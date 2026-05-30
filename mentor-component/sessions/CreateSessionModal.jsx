@@ -249,7 +249,7 @@ export default function CreateSessionModal({ isOpen, onClose, onCreateSession })
                 </button>
                 {formData.isInstant && (
                   <button
-                    onClick={() => window.location.href = `/tutor-dashboard/sessions/${formData.sessionId}`}
+                    onClick={() => window.location.href = `/mentor-dashboard/sessions/${formData.sessionId}`}
                     className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
                   >
                     Start Teaching Now

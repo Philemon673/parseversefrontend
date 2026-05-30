@@ -23,11 +23,10 @@ const trending = [
 ];
 
 const categories = [
-  { label: "All", href: "/explore" },
-  { label: "Courses", href: "/explore/courses" },
-  { label: "Mentors", href: "/explore/mentors" },
-  { label: "Tutorials", href: "/explore/tutorials" },
-  { label: "Live", href: "/mentor-dashboard/sessions" },
+  { label: "All", href: "/tutor-dashboard/Home" },
+  { label: "Courses", href: "/tutor-dashboard/Home/courses" },
+  { label: "Short", href: "/tutor-dashboard/Home/short" },
+  { label: "Live", href: "/tutor-dashboard/sessions" },
 ];
 
 const suggestions = [
@@ -156,7 +155,7 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
               if (e.key === "Enter") handleSearch();
               if (e.key === "Escape") setFocused(false);
             }}
-            placeholder="Search courses, mentors, topics..."
+            placeholder="Search courses, tutors, topics..."
             className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 text-sm focus:outline-none"
           />
 
