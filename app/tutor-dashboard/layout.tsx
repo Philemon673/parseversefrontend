@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/tutor-component/sidebar";
 import Navbar from "@/tutor-component/navbar";
 import { NotificationProvider } from "@/lib/notification-context";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -23,6 +23,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const hideOnScroll = HIDE_ON_SCROLL_PAGES.includes(pathname);
   const isSessionPage = pathname.includes("/sessions/");
+
+  const { user, isLoading } = useAuth();
+  const router = require("next/navigation").useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.replace("/login");
+      } else if (user.role !== "TUTOR" && user.role !== "ADMIN") {
+        router.replace(`/${user.role.toLowerCase()}-dashboard/Home`);
+      }
+    }
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     // Reset navbar to visible on every route change
@@ -51,6 +64,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
     };
   }, [pathname, hideOnScroll]);
+
+  if (isLoading || !user || (user.role !== "TUTOR" && user.role !== "ADMIN")) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#f8fafc]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <AuthProvider>
