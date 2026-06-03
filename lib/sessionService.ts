@@ -20,6 +20,11 @@ export async function getMyLiveSessions() {
   return response as any;
 }
 
+export async function getActiveLiveSessions() {
+  const response = await api.get('/live-sessions/active');
+  return response as any;
+}
+
 export async function getLiveSessionById(id: string) {
   const response = await api.get(`/live-sessions/${id}`);
   return response as any;

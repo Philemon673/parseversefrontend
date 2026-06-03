@@ -195,12 +195,11 @@ function VideoPreview({ courseType, courseId, selectedLesson, selectedSection })
     </div>
   );
 }
-
 function PricingCard({ course, isEnrolled, onEnrollClick, onGoToCourse }) {
-  const isHardcopy = course.type === "Hardcopy";
-  const finalPrice = isHardcopy ? 49 : 79;
-  const originalPrice = isHardcopy ? 69 : 99;
-  const discountPercent = isHardcopy ? 28 : 20;
+  const isHardcopy = course?.type === "Hardcopy";
+  const finalPrice = course?.price || course?.discountedPrice || (isHardcopy ? 49 : 79);
+  const originalPrice = course?.originalPrice || (isHardcopy ? 69 : 99);
+  const discountPercent = course?.discountPercent || (isHardcopy ? 28 : 20);
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl shadow-slate-200/60 border border-slate-100 p-6 sticky top-6">

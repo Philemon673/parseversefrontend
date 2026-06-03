@@ -188,21 +188,21 @@ export default function PaymentModal({ isOpen, onClose, course }) {
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-slate-900 text-sm">{course.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">By {course.instructor.name}</p>
+                      <p className="text-xs text-slate-500 mt-1">By {course.instructor?.name || "Instructor"}</p>
                     </div>
                   </div>
                   <div className="border-t border-slate-200 pt-3 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-600">Original Price</span>
-                      <span className="text-slate-400 line-through">${course.originalPrice}</span>
+                      <span className="text-slate-400 line-through">${course.originalPrice || 99}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">Discount ({course.discountPercent}%)</span>
-                      <span className="text-emerald-600 font-semibold">-${course.originalPrice - course.discountedPrice}</span>
+                      <span className="text-slate-600">Discount ({course.discountPercent || 20}%)</span>
+                      <span className="text-emerald-600 font-semibold">-${(course.originalPrice || 99) - (course.price || course.discountedPrice || 79)}</span>
                     </div>
                     <div className="flex justify-between text-lg font-black pt-2 border-t border-slate-200">
                       <span className="text-slate-900">Total</span>
-                      <span className="text-indigo-600">${course.discountedPrice}</span>
+                      <span className="text-indigo-600">${course.price || course.discountedPrice || 79}</span>
                     </div>
                   </div>
                 </div>

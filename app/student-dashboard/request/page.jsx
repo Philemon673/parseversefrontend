@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronLeft,
@@ -171,6 +172,7 @@ export default function RequestMentorshipPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const router = useRouter()
 
   useEffect(() => {
     if (!selectedField) setActiveStep(1);
@@ -241,7 +243,7 @@ export default function RequestMentorshipPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition shadow-sm">
+          <button onClick={() => router.push('/student-dashboard/request/viewRequest')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition shadow-sm">
             <List className="w-4 h-4" />
             View My Requests
           </button>

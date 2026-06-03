@@ -1,18 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Search, ChevronDown, MoreVertical, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, ChevronDown, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-import { useEffect } from "react";
 import { getMyEnrolledCourses } from "../../../lib/courseService";
-
-const tabs = [
-  { label: "All", count: 203, key: "all" },
-  { label: "In Progress", count: 3, key: "progress" },
-  { label: "Completed", count: 15, key: "completed" },
-  { label: "Saved", count: null, key: "saved" },
-];
 
 const categories = ["All Categories", "Web Development", "Data Science", "Design", "Marketing"];
 
@@ -52,11 +43,11 @@ function CourseCard({ enrollment }) {
   const router = useRouter();
   const { course, progress } = enrollment;
 
-  const totalLessons = course._count?.modules || 1; // Assuming total modules as fallback
+  const totalLessons = course._count?.modules || 1;
   const completedLessons = progress?.completedLessons || 0;
   const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   const isCompleted = percent >= 100;
-  const status = isCompleted ? "Completed" : "Progress";
+  const status = isCompleted ? "Completed" : "In Progress";
   const statusColor = isCompleted ? "bg-purple-500 text-white" : "bg-yellow-400 text-yellow-900";
   
   const instructorName = course.instructor 
@@ -65,11 +56,19 @@ function CourseCard({ enrollment }) {
   const instructorAvatarInitial = instructorName.charAt(0);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col">
-      <div className="relative h-44 overflow-hidden bg-slate-200">
-        <div className="w-full h-full flex items-center justify-center text-slate-400">
-          No Image
-        </div>
+    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 flex flex-col group hover:shadow-lg transition-all duration-300">
+      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100">
+        {course.thumbnailUrl ? (
+          <img
+            src={course.thumbnailUrl}
+            alt={course.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <BookOpen className="w-10 h-10 text-indigo-300" />
+          </div>
+        )}
         <span className={"absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full " + statusColor}>
           {status}
         </span>
@@ -140,13 +139,27 @@ export default function CoursesPage() {
     fetchEnrollments();
   }, []);
 
+  // Compute live counts from real data
+  const completedCount = enrollments.filter((e) =>
+    (e.progress?.completedLessons || 0) >= (e.course._count?.modules || 1)
+  ).length;
+  const inProgressCount = enrollments.length - completedCount;
+
+  const tabs = [
+    { label: "All", count: enrollments.length, key: "all" },
+    { label: "In Progress", count: inProgressCount, key: "progress" },
+    { label: "Completed", count: completedCount, key: "completed" },
+    { label: "Saved", count: null, key: "saved" },
+  ];
+
   const filtered = enrollments.filter((enrollment) => {
     const course = enrollment.course;
-    const isCompleted = enrollment.progress?.completedLessons >= (course._count?.modules || 1);
+    const isCompleted = (enrollment.progress?.completedLessons || 0) >= (course._count?.modules || 1);
     
     let matchTab = true;
     if (activeTab === "progress") matchTab = !isCompleted;
     if (activeTab === "completed") matchTab = isCompleted;
+    if (activeTab === "saved") return false; // Saved not yet implemented
 
     const matchSearch = course.title?.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
@@ -215,20 +228,28 @@ export default function CoursesPage() {
         ))}
       </div>
 
-      {/* ── Course Grid ─────────────────────────────────────────────── */}
+      {/* ── Course Grid ─────────────────────────────────────────── */}
       {loading ? (
         <div className="flex items-center justify-center h-48">
           <div className="w-10 h-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
         </div>
       ) : filtered.length > 0 ? (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((enrollment) => (
             <CourseCard key={enrollment.id || enrollment.courseId} enrollment={enrollment} />
           ))}
         </div>
+      ) : activeTab === "saved" ? (
+        <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-400">
+          <BookOpen className="w-10 h-10 text-slate-200" />
+          <p className="text-sm font-medium">Saved courses coming soon.</p>
+        </div>
       ) : (
-        <div className="flex items-center justify-center h-48 text-slate-400 text-sm">
-          No courses found.
+        <div className="flex flex-col items-center justify-center h-56 gap-3 text-slate-400">
+          <BookOpen className="w-10 h-10 text-slate-200" />
+          <p className="text-sm font-medium">
+            {search ? `No courses matching "${search}"` : "No courses found in this category."}
+          </p>
         </div>
       )}
 

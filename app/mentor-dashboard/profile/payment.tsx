@@ -170,7 +170,7 @@ export default function PaymentTab() {
             onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition shadow-sm"
           >
-            <Plus className="w-3.5 h-3.5" /> Add Transaction
+            <Plus className="w-3.5 h-3.5" /> Withdrawals
           </button>
         </div>
 

@@ -24,41 +24,9 @@ import {
     User,
 } from "lucide-react";
 import { userService } from "../../../lib/userService";
+import { getMyEnrolledCourses } from "../../../lib/courseService";
 
 const tabs = ["Overview", "Achievements", "Certificates"];
-
-const courses = [
-    {
-        id: 1,
-        title: "Python for Beginners",
-        updated: "Updated 1 day ago",
-        lessons: 45,
-        hours: "12 hrs",
-        rating: 3.5,
-        instructor: "Masheihgan",
-        progress: 42,
-        tag: "Progress",
-        image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&q=80",
-        avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80",
-    },
-    {
-        id: 2,
-        title: "Complete JavaScript Course",
-        updated: "Updated 5 days ago",
-        lessons: 50,
-        hours: "18 hrs",
-        rating: 4,
-        completedLessons: 27,
-        totalLessons: 55,
-        percent: 82,
-        extra: "610%",
-        instructor: "James Smith",
-        progress: 82,
-        tag: "Progress",
-        image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400&q=80",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80",
-    },
-];
 
 function TabButton({ label, active, onClick }) {
     return (
@@ -144,6 +112,7 @@ export default function StudentProfilePage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [user, setUser] = useState(null);
+    const [enrolledCourses, setEnrolledCourses] = useState([]);
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -174,9 +143,14 @@ export default function StudentProfilePage() {
                 return;
             }
             
-            // Fetch user data from API using the authenticated user's ID
-            const userData = await userService.getUserProfile(currentUser.id);
+            // Fetch user data and enrolled courses from API
+            const [userData, coursesData] = await Promise.all([
+                userService.getUserProfile(currentUser.id),
+                getMyEnrolledCourses().catch(() => [])
+            ]);
+            
             setUser(userData);
+            setEnrolledCourses(Array.isArray(coursesData) ? coursesData : []);
             
             const profileData = {
                 firstName: userData.firstName,
@@ -514,77 +488,103 @@ export default function StudentProfilePage() {
                         <div className="w-1 h-5 bg-indigo-600 rounded-full" />
                         <h2 className="font-bold text-slate-800 text-lg">My Courses</h2>
                     </div>
-                    <button className="flex items-center gap-1 text-sm text-slate-500 hover:text-indigo-600 transition font-medium">
+                    <button onClick={() => router.push("/student-dashboard/courses")} className="flex items-center gap-1 text-sm text-slate-500 hover:text-indigo-600 transition font-medium">
                         View All
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    {courses.map((course) => (
-                        <div key={course.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-                            <div className="relative h-36">
-                                <img
-                                    src={course.image}
-                                    alt={course.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <span className="absolute top-3 left-3 bg-white/90 text-indigo-600 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                                    {course.tag}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {enrolledCourses.slice(0, 2).map((enrollment) => {
+                        const course = enrollment.course;
+                        const progress = enrollment.progress;
+                        
+                        const totalLessons = course._count?.modules || 1;
+                        const completedLessons = progress?.completedLessons || 0;
+                        const percent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+                        const isCompleted = percent >= 100;
+                        const status = isCompleted ? "Completed" : "In Progress";
+                        
+                        const instructorName = course.instructor 
+                            ? `${course.instructor.firstName} ${course.instructor.lastName}`
+                            : "Instructor";
+                        const instructorAvatarInitial = instructorName.charAt(0);
+
+                        return (
+                        <div key={enrollment.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-lg transition-all duration-300">
+                            <div className="relative h-36 bg-gradient-to-br from-indigo-100 to-violet-100">
+                                {course.thumbnailUrl ? (
+                                    <img
+                                        src={course.thumbnailUrl}
+                                        alt={course.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <BookOpen className="w-10 h-10 text-indigo-300" />
+                                    </div>
+                                )}
+                                <span className={`absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm ${isCompleted ? 'bg-purple-500 text-white' : 'bg-yellow-400 text-yellow-900'}`}>
+                                    {status}
                                 </span>
                             </div>
 
                             <div className="p-4 flex flex-col gap-2.5 flex-1">
                                 <div className="flex items-start gap-3">
-                                    <img
-                                        src={course.avatar}
-                                        alt={course.instructor}
-                                        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                                    />
+                                    <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-sm border border-white">
+                                        {instructorAvatarInitial}
+                                    </div>
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-slate-800 text-sm leading-tight">{course.title}</h3>
-                                        <p className="text-[10px] text-slate-400 mt-0.5">{course.updated}</p>
+                                        <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-1">{course.title}</h3>
+                                        <p className="text-[10px] text-slate-400 mt-0.5">{course.category || "General"}</p>
                                     </div>
                                 </div>
 
-                                {course.id === 2 && <StarRating rating={course.rating} />}
-
                                 <ProgressBar
-                                    value={course.progress}
-                                    color={course.id === 1 ? "bg-indigo-500" : "bg-blue-400"}
+                                    value={percent}
+                                    color={isCompleted ? "bg-purple-500" : "bg-indigo-500"}
                                 />
 
                                 <div className="flex items-center gap-3 text-xs text-slate-400">
-                                    <span>• {course.lessons} Lessons</span>
-                                    <span>• {course.hours}</span>
-                                    {course.id === 2 && (
-                                        <span className="text-slate-500 font-medium">
-                                            {course.completedLessons}/{course.totalLessons} · {course.percent}% | {course.extra}
-                                        </span>
-                                    )}
+                                    <span>• {totalLessons} Lessons</span>
+                                    <span className="text-slate-500 font-medium">
+                                        {completedLessons}/{totalLessons} · {percent}%
+                                    </span>
                                 </div>
 
-                                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                                <div className="flex items-center justify-between pt-1 border-t border-slate-100 mt-auto">
                                     <div className="flex items-center gap-2">
                                         <Users className="w-3.5 h-3.5 text-slate-400" />
-                                        {course.id === 2 && <Edit className="w-3.5 h-3.5 text-slate-400" />}
-                                        <span className="text-xs text-slate-500">{course.instructor}</span>
+                                        <span className="text-xs text-slate-500 truncate max-w-[100px]">{instructorName}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {course.id === 1 && <Search className="w-3.5 h-3.5 text-slate-400" />}
-                                        <MoreHorizontal className="w-3.5 h-3.5 text-slate-400" />
                                         <button 
-                                            onClick={() => router.push(`/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`)}
+                                            onClick={() => router.push(course.type === "Hardcopy" 
+                                                ? `/student-dashboard/coursedetails/courses/hardcopy?courseId=${course.id}`
+                                                : `/student-dashboard/coursedetails/courses/coursedetails?courseId=${course.id}`)}
                                             className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
                                         >
-                                            Continue
-                                            {course.id === 2 && <ChevronRight className="w-3 h-3" />}
+                                            {isCompleted ? "Review" : "Continue"}
+                                            <ChevronRight className="w-3 h-3" />
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        )
+                    })}
+                    {enrolledCourses.length === 0 && (
+                        <div className="col-span-2 flex flex-col items-center justify-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                            <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
+                            <p className="text-slate-500 font-medium">You haven't enrolled in any courses yet.</p>
+                            <button 
+                                onClick={() => router.push("/student-dashboard/searchresults")}
+                                className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition"
+                            >
+                                Browse Courses
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -25,6 +25,9 @@ import { getMyEnrolledCourses } from "../../../lib/courseService";
 import { useAuth } from "@/lib/auth-context";
 import { BookOpen, Award, Clock } from "lucide-react";
 import CommunityFeed from "@/component/CommunityFeed";
+import Banners from "./banner/page";
+import { getActiveLiveSessions } from "@/lib/sessionService";
+import { userService } from "@/lib/userService";
 
 const posts = [
   {
@@ -342,17 +345,16 @@ function VideoCard({ post }) {
   );
 }
 
-function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
+function LiveSessionAlert({ activeSession, onClose }) {
   const router = useRouter();
-  const [isVisible, setIsVisible] = useState(true);
 
-  if (!isVisible) return null;
+  if (!activeSession) return null;
 
   return (
     <div className="relative group overflow-hidden bg-white rounded-[2rem] p-6 shadow-xl shadow-indigo-100/50 border border-indigo-50 mb-8 transition-all hover:shadow-2xl hover:shadow-indigo-200/50">
       {/* Close Button */}
       <button
-        onClick={() => setIsVisible(false)}
+        onClick={onClose}
         className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors z-20 text-slate-400"
       >
         <X className="w-4 h-4" />
@@ -377,21 +379,23 @@ function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white text-[9px] font-black uppercase tracking-[0.1em] shadow-lg shadow-red-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live Now
+                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {activeSession.status === 'Live' ? 'Live Now' : 'Scheduled'}
               </span>
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                Engineering
+                Session
               </span>
             </div>
             <h3 className="text-xl font-black text-slate-900 leading-tight tracking-tight group-hover:text-indigo-600 transition-colors">
-              Introduction to React 19 — Live Deep Dive
+              {activeSession.title}
             </h3>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
                 <User className="w-3 h-3 text-indigo-600" />
               </div>
               <p className="text-xs text-slate-500 font-bold">
-                Hosted by <span className="text-indigo-600">John Smiga</span>
+                Hosted by <span className="text-indigo-600">
+                  {activeSession.tutor ? `${activeSession.tutor.firstName} ${activeSession.tutor.lastName}` : "Tutor"}
+                </span>
               </p>
             </div>
           </div>
@@ -408,12 +412,12 @@ function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
               />
             ))}
             <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
-              +28
+              +{activeSession.maxStudents > 4 ? activeSession.maxStudents - 4 : 0}
             </div>
           </div>
 
           <button
-            onClick={() => router.push(`/student-dashboard/sessions/${sessionId}`)}
+            onClick={() => router.push(`/student-dashboard/sessions/${activeSession.id}`)}
             className="px-10 py-4 rounded-2xl bg-indigo-600 text-white font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 group/btn"
           >
             Join Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
@@ -427,39 +431,6 @@ function LiveSessionAlert({ sessionId = "react-19-deep-dive" }) {
 
 
 // ── Student Dashboard Overview Widgets ───────────────────────────────────────
-
-function WelcomeBanner({ name }) {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
-  return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-[2rem] p-6 shadow-xl mb-2 text-white border border-white/10">
-      {/* Decorative Blur Spheres */}
-      <div className="absolute top-[-30%] right-[-10%] w-60 h-60 bg-white/10 rounded-full blur-2xl" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-40 h-40 bg-pink-500/20 rounded-full blur-xl" />
-      
-      <div className="relative z-10 flex flex-col gap-1">
-        <h2 className="text-2xl font-black tracking-tight">{greeting}, {name || "Scholar"}! 👋</h2>
-        <p className="text-purple-100 text-xs mt-0.5 max-w-md leading-relaxed">
-          Welcome back to ParseVerse! Ready to continue your learning journey? Monitor your stats and jump right back in below.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, colorClass, bgClass }) {
-  return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300 flex-1 min-w-[140px]">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${bgClass}`}>
-        <Icon className={`w-5 h-5 ${colorClass}`} />
-      </div>
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-        <p className="text-lg font-black text-slate-800 mt-0.5">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 function ResumeCard({ enrollment }) {
   const router = useRouter();
@@ -513,11 +484,8 @@ function ResumeCard({ enrollment }) {
   );
 }
 
-function ScheduleWidget() {
-  const schedules = [
-    { title: "React 19 Deep Dive", time: "Today, 4:00 PM", tutor: "John Smiga", status: "Live Soon" },
-    { title: "Python Algorithm Q&A", time: "Tomorrow, 2:00 PM", tutor: "Mashok Khan", status: "Scheduled" },
-  ];
+function ScheduleWidget({ schedules }) {
+  if (!schedules || schedules.length === 0) return null;
 
   return (
     <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm flex flex-col gap-4">
@@ -526,13 +494,13 @@ function ScheduleWidget() {
         {schedules.map((s, idx) => (
           <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-1.5 relative overflow-hidden group hover:border-indigo-300 hover:bg-indigo-50/20 transition-all duration-300">
             <div className="flex items-center justify-between">
-              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${s.status === "Live Soon" ? "bg-red-100 text-red-600" : "bg-slate-200 text-slate-600"}`}>
+              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${s.status === "Live" || s.status === "Live Soon" ? "bg-red-100 text-red-600" : "bg-slate-200 text-slate-600"}`}>
                 {s.status}
               </span>
-              <span className="text-[10px] text-slate-400 font-bold">{s.time}</span>
+              <span className="text-[10px] text-slate-400 font-bold">{s.dateTime || s.time}</span>
             </div>
-            <h4 className="font-bold text-slate-800 text-xs leading-snug group-hover:text-indigo-600 transition-colors">{s.title}</h4>
-            <p className="text-[10px] text-slate-400 font-medium">Tutor: <span className="text-slate-600 font-bold">{s.tutor}</span></p>
+            <h4 className="font-bold text-slate-800 text-xs leading-snug group-hover:text-indigo-600 transition-colors">{s.subject || s.title}</h4>
+            <p className="text-[10px] text-slate-400 font-medium">Tutor: <span className="text-slate-600 font-bold">{s.tutor || s.student}</span></p>
           </div>
         ))}
       </div>
@@ -544,6 +512,10 @@ export default function PostsSection() {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [liveSessions, setLiveSessions] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [hideLiveSession, setHideLiveSession] = useState(false);
 
   useEffect(() => {
     async function loadStats() {
@@ -558,6 +530,28 @@ export default function PostsSection() {
     }
     loadStats();
   }, []);
+
+  useEffect(() => {
+    async function loadRightPanel() {
+      try {
+        const liveRes = await getActiveLiveSessions();
+        const activeLive = liveRes?.filter((s) => s.status !== "Ended");
+        setLiveSessions(activeLive || []);
+
+        const schedRes = await userService.getSessions();
+        const activeSched = schedRes?.filter((s) => s.status !== "Completed" && s.status !== "Ended" && s.status !== "Cancelled");
+        setSchedules(activeSched || []);
+      } catch (err) {
+        console.error("Failed to load right panel sessions", err);
+      }
+    }
+    loadRightPanel();
+    const interval = setInterval(loadRightPanel, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const activeLiveSession = !hideLiveSession && liveSessions.length > 0 ? liveSessions[0] : null;
+  const showRightPanel = activeLiveSession || schedules.length > 0;
 
   const totalEnrolled = enrollments.length;
   const completed = enrollments.filter(e => {
@@ -579,38 +573,21 @@ export default function PostsSection() {
       <SearchBar />
       
       {/* Dynamic Welcome Banner */}
-      <WelcomeBanner name={user?.name} />
+      <Banners 
+        name={user?.name} 
+        loading={loading}
+        totalEnrolled={totalEnrolled}
+        completed={completed}
+        inProgress={inProgress}
+      />
 
       {/* Grid Layout containing Main Dashboard and Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
         
-        {/* Left Column: Dashboard stats, resume learning, and social feed (7 columns) */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        {/* Left Column: Dashboard stats, resume learning, and social feed */}
+        <div className={`flex flex-col gap-6 ${showRightPanel ? 'lg:col-span-7' : 'lg:col-span-10'}`}>
           
-          {/* Stats Cards Row */}
-          <div className="flex flex-wrap gap-4">
-            <StatCard 
-              label="Enrolled Courses" 
-              value={loading ? "..." : String(totalEnrolled)} 
-              icon={BookOpen} 
-              colorClass="text-indigo-600" 
-              bgClass="bg-indigo-50 border border-indigo-100" 
-            />
-            <StatCard 
-              label="In Progress" 
-              value={loading ? "..." : String(inProgress)} 
-              icon={Clock} 
-              colorClass="text-purple-600" 
-              bgClass="bg-purple-50 border border-purple-100" 
-            />
-            <StatCard 
-              label="Certificates" 
-              value={loading ? "..." : String(completed)} 
-              icon={Award} 
-              colorClass="text-pink-600" 
-              bgClass="bg-pink-50 border border-pink-100" 
-            />
-          </div>
+          
 
           {/* Resume Learning Card if there is an active course */}
           {!loading && activeCourse && (
@@ -619,16 +596,21 @@ export default function PostsSection() {
 
           {/* Social Feed Posts */}
           <div className="flex flex-col gap-6 mt-2">
-            <h3 className="font-black text-slate-800 text-sm px-1">Community Feed</h3>
+            <h3 className="font-black text-slate-800 text-sm px-1">Feed</h3>
             <CommunityFeed />
           </div>
         </div>
 
-        {/* Right Column: Live Session alerts & Upcoming schedule (3 columns) */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          <LiveSessionAlert />
-          <ScheduleWidget />
-        </div>
+        {/* Right Column: Live Session alerts & Upcoming schedule */}
+        {showRightPanel && (
+          <div className="lg:col-span-3 flex flex-col gap-6">
+            <LiveSessionAlert 
+              activeSession={activeLiveSession} 
+              onClose={() => setHideLiveSession(true)} 
+            />
+            <ScheduleWidget schedules={schedules} />
+          </div>
+        )}
 
       </div>
 
