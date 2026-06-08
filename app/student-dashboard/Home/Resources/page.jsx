@@ -37,7 +37,10 @@ function MentorCard({ mentor }) {
   const router = useRouter();
 
   return (
-    <div className="relative group bg-white/40 backdrop-blur-xl border border-indigo-100 rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.2)] hover:border-indigo-300 hover:-translate-y-1 transition-all duration-500 cursor-pointer flex flex-col overflow-hidden">
+    <div 
+      onClick={() => router.push(`/student-dashboard/instructor/${mentor.id}`)}
+      className="relative group bg-white/40 backdrop-blur-xl border border-indigo-100 rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(99,102,241,0.2)] hover:border-indigo-300 hover:-translate-y-1 transition-all duration-500 cursor-pointer flex flex-col overflow-hidden"
+    >
       
       {/* Hover inner glow */}
       <div className="absolute inset-0 border border-indigo-100/50 bg-gradient-to-br from-indigo-100/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem]" />
