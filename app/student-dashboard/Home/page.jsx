@@ -26,7 +26,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BookOpen, Award, Clock } from "lucide-react";
 import CommunityFeed from "@/component/CommunityFeed";
 import Banners from "./banner/page";
-import { getActiveLiveSessions } from "@/lib/sessionService";
+import { getRelevantLiveSessions } from "@/lib/sessionService";
 import { userService } from "@/lib/userService";
 
 const posts = [
@@ -534,15 +534,20 @@ export default function PostsSection() {
   useEffect(() => {
     async function loadRightPanel() {
       try {
-        const liveRes = await getActiveLiveSessions();
-        const activeLive = liveRes?.filter((s) => s.status !== "Ended");
-        setLiveSessions(activeLive || []);
+        const liveRes = await getRelevantLiveSessions();
+        const activeLive = Array.isArray(liveRes) ? liveRes.filter((s) => s.status !== "Ended") : [];
+        setLiveSessions(activeLive);
+      } catch (err) {
+        console.warn("No relevant live sessions found", err);
+        setLiveSessions([]);
+      }
 
+      try {
         const schedRes = await userService.getSessions();
         const activeSched = schedRes?.filter((s) => s.status !== "Completed" && s.status !== "Ended" && s.status !== "Cancelled");
         setSchedules(activeSched || []);
       } catch (err) {
-        console.error("Failed to load right panel sessions", err);
+        console.warn("Failed to load scheduled sessions", err);
       }
     }
     loadRightPanel();

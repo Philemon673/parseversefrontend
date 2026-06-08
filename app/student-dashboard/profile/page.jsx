@@ -1,6 +1,5 @@
 "use client";
-import Student from "../../../assets/student.jpg"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
     Mail,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 import { userService } from "../../../lib/userService";
 import { getMyEnrolledCourses } from "../../../lib/courseService";
+import { useAuth } from "@/lib/auth-context";
 
 const tabs = ["Overview", "Achievements", "Certificates"];
 
@@ -106,6 +106,7 @@ function EditableField({ icon, value, onChange, editing, type = "text", placehol
 
 export default function StudentProfilePage() {
     const router = useRouter();
+    const { updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState("Overview");
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -113,6 +114,8 @@ export default function StudentProfilePage() {
     const [error, setError] = useState(null);
     const [user, setUser] = useState(null);
     const [enrolledCourses, setEnrolledCourses] = useState([]);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const fileInputRef = useRef(null);
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -210,6 +213,31 @@ export default function StudentProfilePage() {
         setError(null);
     }
 
+    async function handleAvatarUpload(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setUploadingAvatar(true);
+            setError(null);
+            const data = await userService.uploadAvatar(file);
+            
+            // Update local state
+            setUser(prev => ({ ...prev, avatar: data.url }));
+            
+            // Update auth context globally
+            updateUser({ avatar: data.url });
+            
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to upload avatar');
+        } finally {
+            setUploadingAvatar(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    }
+
     // capitalize: first letter uppercase, rest lowercase
     const capitalize = (str) =>
         str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : str;
@@ -266,14 +294,31 @@ export default function StudentProfilePage() {
                 {/* Card 1 — Photo + Sidebar Info */}
                 <div className="bg-white rounded-3xl shadow-sm overflow-hidden flex flex-col w-64 flex-shrink-0">
                     <div className="relative h-72 bg-slate-200 overflow-hidden">
-                        <img
-                            src={Student.src}
-                            alt={`${user.firstName} ${user.lastName}`}
-                            className="w-full h-full object-cover object-top"
-                        />
-                        <button className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow">
-                            <Camera className="w-4 h-4 text-slate-500" />
+                        {user.avatar ? (
+                            <img
+                                src={user.avatar}
+                                alt={`${user.firstName} ${user.lastName}`}
+                                className="w-full h-full object-cover object-top"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-400 to-purple-600 text-white text-6xl font-bold shadow-inner">
+                                {user.firstName ? (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase() : 'PV'}
+                            </div>
+                        )}
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                            className="absolute bottom-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow disabled:opacity-50"
+                        >
+                            {uploadingAvatar ? <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" /> : <Camera className="w-4 h-4 text-slate-500" />}
                         </button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept="image/jpeg, image/png, image/webp"
+                            className="hidden"
+                            onChange={handleAvatarUpload}
+                        />
                     </div>
 
                     <div className="p-5 flex flex-col gap-3 border-t border-slate-100">

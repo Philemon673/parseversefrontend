@@ -22,19 +22,15 @@ function ResponsesContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch available mentors and simulate responses for the UI
     const fetchResponders = async () => {
       try {
-        const res = await api.get("/mentorship/mentors");
-        const allMentors = Array.isArray(res) ? res : (res.data || []);
+        const res = await api.get(`/mentorship/${requestId}/responses`);
+        const data = Array.isArray(res) ? res : (res.data || []);
         
-        // Filter by role so we only see Mentors or Tutors based on the request
-        const filtered = allMentors.filter(m => m.role.toLowerCase() === role.toLowerCase());
-        
-        // Simulate that these users have responded to the request
-        setResponders(filtered.length > 0 ? filtered : allMentors.slice(0, 3));
+        // Data format is an array of MentorshipResponse objects which contain a 'mentor' property.
+        setResponders(data);
       } catch (err) {
-        console.error("Failed to fetch responders", err);
+        console.error("Failed to fetch responses", err);
       } finally {
         setLoading(false);
       }
@@ -90,8 +86,10 @@ function ResponsesContent() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {responders.map((responder, idx) => (
-              <div key={responder.id || idx} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition hover:shadow-md">
+            {responders.map((response, idx) => {
+              const responder = response.mentor;
+              return (
+              <div key={response.id || idx} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition hover:shadow-md">
                 
                 <div className="flex items-center gap-4">
                   {/* Avatar */}
@@ -138,6 +136,11 @@ function ResponsesContent() {
                         </span>
                       )}
                     </div>
+                    {response.message && (
+                      <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        "{response.message}"
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -151,12 +154,12 @@ function ResponsesContent() {
                     Message
                   </button>
                   <p className="text-[10px] text-gray-400 text-center sm:text-right font-medium">
-                    Responded recently
+                    {new Date(response.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </p>
                 </div>
 
               </div>
-            ))}
+            )})}
           </div>
         )}
       </div>

@@ -8,6 +8,7 @@ import {
   Building2, Map, Globe, Tags, Sparkles, Plus, Phone,
 } from "lucide-react";
 import { userService } from "@/lib/userService";
+import { useRouter } from "next/navigation";
 
 import DetailsTab from "./details";
 import ResourcesTab from "./resources";
@@ -534,6 +535,7 @@ function PersonalDetailsTab({ user, isLoading, onProfileUpdate, avatarSrc, onAva
 
 // ── ProfilePage (root) ───────────────────────────────────────────────────────
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("Personal Details");
   const [avatarSrc, setAvatarSrc] = useState(null);
   const [user, setUser] = useState(null);
@@ -683,6 +685,16 @@ export default function ProfilePage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Direct Request */}
+            <div className="px-3 py-2 border-b border-gray-100">
+              <button
+                onClick={() => router.push(`/student-dashboard/request?role=tutor&mentorId=${user?.id}`)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition shadow-sm"
+              >
+                Request Tutoring
+              </button>
             </div>
 
             {/* Support */}

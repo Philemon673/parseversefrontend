@@ -48,15 +48,40 @@ function NotificationCard(props) {
   const onDelete = props.onDelete;
   const onMarkRead = props.onMarkRead;
 
+  let initials = "PV";
+  let iconBg = "bg-blue-500";
+  let IconComponent = Bell;
+
+  if (notif.type === "SYSTEM") {
+    initials = "SYS";
+    iconBg = "bg-gray-500";
+    IconComponent = RefreshCw;
+  } else if (notif.type === "MENTOR_RECOMMENDATION") {
+    initials = "M";
+    iconBg = "bg-indigo-500";
+    IconComponent = Star;
+  } else if (notif.type === "COURSE_RECOMMENDATION") {
+    initials = "C";
+    iconBg = "bg-green-500";
+    IconComponent = BookOpen;
+  } else {
+    // Other types
+    if (notif.title?.toLowerCase().includes("session") || notif.title?.toLowerCase().includes("live")) {
+      initials = "LS";
+      iconBg = "bg-red-500";
+      IconComponent = MessageSquare;
+    }
+  }
+
   return (
     <div className={"flex items-start gap-3 p-4 rounded-2xl border transition group " +
       (notif.isRead ? "bg-white border-gray-100" : "bg-indigo-50/60 border-indigo-100")
     }>
       {/* Avatar + icon badge */}
       <div className="relative flex-shrink-0">
-        <Avatar initials={notif.type === "SYSTEM" ? "SYS" : "PV"} className="w-10 h-10 text-xs" color="from-indigo-400 to-purple-500" />
-        <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm bg-blue-500`}>
-          <Bell className="w-2.5 h-2.5 text-white" />
+        <Avatar initials={initials} className="w-10 h-10 text-xs" color="from-indigo-400 to-purple-500" />
+        <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${iconBg}`}>
+          <IconComponent className="w-2.5 h-2.5 text-white" />
         </span>
       </div>
 

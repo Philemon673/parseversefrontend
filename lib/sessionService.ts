@@ -25,6 +25,11 @@ export async function getActiveLiveSessions() {
   return response as any;
 }
 
+export async function getRelevantLiveSessions() {
+  const response = await api.get('/live-sessions/relevant');
+  return response as any;
+}
+
 export async function getLiveSessionById(id: string) {
   const response = await api.get(`/live-sessions/${id}`);
   return response as any;

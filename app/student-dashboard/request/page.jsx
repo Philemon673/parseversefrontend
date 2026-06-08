@@ -156,8 +156,13 @@ function Calendar({ selectedDate, onSelect }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 import { api } from "@/lib/api";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function RequestMentorshipPage() {
+function RequestFormContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [activeStep, setActiveStep] = useState(1);
   const [selectedField, setSelectedField] = useState("");
   const [topic, setTopic] = useState("");
@@ -167,12 +172,14 @@ export default function RequestMentorshipPage() {
   const [notes, setNotes] = useState("");
   const [selectedDuration, setSelectedDuration] = useState("2 Hours");
   const [suggestedPrice, setSuggestedPrice] = useState("");
-  const [selectedRole, setSelectedRole] = useState("mentor");
+  
+  const initialRole = searchParams.get("role") || "mentor";
+  const mentorId = searchParams.get("mentorId");
+  const [selectedRole, setSelectedRole] = useState(initialRole);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const router = useRouter()
 
   useEffect(() => {
     if (!selectedField) setActiveStep(1);
@@ -216,6 +223,7 @@ export default function RequestMentorshipPage() {
         suggestedPrice: suggestedPrice ? parseFloat(suggestedPrice) : undefined,
         notes: notes,
         role: selectedRole.toUpperCase(),
+        mentorId: mentorId || undefined,
       });
       setSubmitSuccess(true);
       // Reset form
@@ -458,5 +466,13 @@ export default function RequestMentorshipPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RequestMentorshipPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading request form...</div>}>
+      <RequestFormContent />
+    </Suspense>
   );
 }

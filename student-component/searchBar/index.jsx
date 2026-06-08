@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { userService } from "@/lib/userService";
 
-const trending = [
+const defaultTrending = [
   { label: "Machine Learning Basics", views: "2.4M" },
   { label: "React 19 New Features", views: "1.8M" },
   { label: "Python for Beginners", views: "3.1M" },
   { label: "System Design Interview", views: "980K" },
-  { label: "Next.js 15 Tutorial", views: "1.2M" },
 ];
 
 const categories = [ 
@@ -57,6 +57,7 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
   const [focused, setFocused] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [recents, setRecents] = useState(recentSearches);
+  const [trending, setTrending] = useState(defaultTrending);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState({});
   const inputRef = useRef(null);
@@ -94,6 +95,16 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    async function fetchTrending() {
+      const data = await userService.getTrendingSearches();
+      if (data && data.length > 0) {
+        setTrending(data);
+      }
+    }
+    fetchTrending();
+  }, []);
+
   function handleSearch(value) {
     const term = value || query;
     if (!term.trim()) return;
@@ -103,10 +114,21 @@ export default function SearchBar({ onSearch, hideCategories = false }) {
     setQuery(term);
     setFocused(false);
     
+    // Log search asynchronously
+    userService.logSearch(term);
+    
+    const filterParams = new URLSearchParams();
+    filterParams.set('q', term);
+    Object.entries(selected).forEach(([key, values]) => {
+      if (values.length > 0) {
+        filterParams.set(key.toLowerCase(), values.join(','));
+      }
+    });
+    
     if (onSearch) {
-      onSearch(term);
+      onSearch(term, selected);
     } else {
-      router.push(`/student-dashboard/searchresults?q=${encodeURIComponent(term)}`);
+      router.push(`/student-dashboard/searchresults?${filterParams.toString()}`);
     }
   }
 

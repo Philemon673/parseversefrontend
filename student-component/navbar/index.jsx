@@ -76,11 +76,14 @@ export default function Navbar() {
       {/* Right — user info + bell */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow">
-            {user && user.firstName ? 
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow overflow-hidden">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              user && user.firstName ? 
               (user.firstName[0] + (user.lastName ? user.lastName[0] : '')).toUpperCase() : 
               'LA'
-            }
+            )}
           </div>
           <div className="text-right">
             <div className="text-sm font-semibold text-gray-800">

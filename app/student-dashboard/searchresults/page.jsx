@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import SearchBar from "../../../student-component/searchBar";
 import ScrollToTop from "../../../screens/scroll";
+import { getAllCourses } from "../../../lib/courseService";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -260,14 +261,10 @@ function ContentCard({ card }) {
   const [saved, setSaved] = useState(false);
 
   const handleClick = () => {
-    if (card.paid) {
-      router.push("/student-dashboard/coursedetails");
-    } else {
-      const baseUrl = card.type === "video"
-        ? "/student-dashboard/coursedetails/courses/coursedetails"
-        : "/student-dashboard/coursedetails/courses/hardcopy";
-      router.push(`${baseUrl}?courseId=${card.id}`);
-    }
+    const baseUrl = card.rawType === "Hardcopy"
+      ? "/student-dashboard/coursedetails/courses/hardcopy"
+      : "/student-dashboard/coursedetails/courses/coursedetails";
+    router.push(`${baseUrl}?courseId=${card.id}`);
   };
 
 
@@ -433,13 +430,62 @@ function SearchResultsContent() {
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState(queryFromUrl);
+  const [dbCourses, setDbCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Sync local state when URL param changes
   useEffect(() => {
     setSearchQuery(queryFromUrl);
   }, [queryFromUrl]);
 
-  const filteredCards = contentCards.filter((card) => {
+  useEffect(() => {
+    async function fetchCourses() {
+      try {
+        setLoading(true);
+        const courses = await getAllCourses();
+        if (Array.isArray(courses)) {
+          const mappedCourses = courses.map((course) => {
+            const author = course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : "Instructor";
+            const initials = course.instructor 
+              ? course.instructor.firstName[0] + (course.instructor.lastName ? course.instructor.lastName[0] : '')
+              : "IN";
+            return {
+              id: course.id,
+              type: course.type === "Hardcopy" ? "image" : "video",
+              paid: course.price > 0,
+              title: course.title,
+              author: author,
+              role: course.instructor?.role || "Tutor",
+              avatar: initials.toUpperCase(),
+              duration: course.hours || "Flexible",
+              views: "0",
+              rating: 5.0,
+              reviews: 0,
+              thumbnail: course.thumbnailUrl || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=60",
+              tags: course.category ? [course.category] : ["General"],
+              price: course.price > 0 ? `$${course.price}` : "Free",
+              level: course.level || "Beginner",
+              time: new Date(course.createdAt).toLocaleDateString(),
+              likes: 0,
+              dislikes: 0,
+              comments: [],
+              description: course.description || "Learn and master new skills.",
+              hashtags: course.category ? [`#${course.category.replace(/\s+/g, '')}`] : ["#Learning"],
+              rawType: course.type
+            };
+          });
+          setDbCourses(mappedCourses);
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCourses();
+  }, []);
+
+  const filteredCards = dbCourses.filter((card) => {
     const matchesCategory =
       activeCategory === "All" ||
       card.tags.some((t) => t.toLowerCase().includes(activeCategory.toLowerCase())) ||
@@ -487,7 +533,12 @@ function SearchResultsContent() {
         </div>
 
         {/* Result Cards */}
-        {filteredCards.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-40">
+            <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-slate-500 font-medium">Loading courses...</span>
+          </div>
+        ) : filteredCards.length > 0 ? (
           <div className="flex flex-col gap-10">
             {filteredCards.map((card) => (
               <ContentCard key={card.id} card={card} />

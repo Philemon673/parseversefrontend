@@ -56,6 +56,34 @@ export const userService = {
     }
   },
 
+  async logSearch(query: string) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/search-log`, {
+        method: 'POST',
+        body: JSON.stringify({ query }),
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to log search', error);
+      return false;
+    }
+  },
+
+  async getTrendingSearches() {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/search-trending`, {
+        method: 'GET',
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch trending searches', error);
+      return [];
+    }
+  },
+
   // Update current logged-in user profile via PATCH /users/me
   async updateUserProfile(_userId: any, profileData: UpdateProfileData) {
     try {

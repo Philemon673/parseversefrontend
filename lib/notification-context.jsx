@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './auth-context';
+import { api } from './api';
 
 const NotificationContext = createContext();
 
@@ -13,63 +15,57 @@ export function useNotifications() {
 }
 
 export function NotificationProvider({ children }) {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "New Course Available",
-      message: "React Advanced Patterns course is now available for enrollment",
-      type: "COURSE",
-      isRead: false,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() // 30 minutes ago
-    },
-    {
-      id: 2,
-      title: "Session Reminder",
-      message: "Your live session 'Introduction to React Hooks' starts in 15 minutes",
-      type: "SESSION",
-      isRead: false,
-      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString() // 15 minutes ago
-    },
-    {
-      id: 3,
-      title: "Assignment Graded",
-      message: "Your JavaScript fundamentals assignment has been graded. Score: 95/100",
-      type: "GRADE",
-      isRead: true,
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
-    },
-    {
-      id: 4,
-      title: "New Message",
-      message: "You have a new message from your instructor John Smiga",
-      type: "MESSAGE",
-      isRead: false,
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString() // 5 minutes ago
-    },
-    {
-      id: 5,
-      title: "System Update",
-      message: "Platform maintenance scheduled for tonight 11 PM - 1 AM EST",
-      type: "SYSTEM",
-      isRead: true,
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() // 4 hours ago
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+      // Optional: Polling every 30s
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setNotifications([]);
     }
-  ]);
+  }, [user?.id]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get(`/notifications/user/${user.id}`);
+      const data = Array.isArray(res) ? res : (res.data || []);
+      // Sort by latest first if backend doesn't
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setNotifications(data);
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const markAsRead = (notificationId) => {
+  const markAsRead = async (notificationId) => {
     setNotifications(prev => 
       prev.map(n => 
         n.id === notificationId ? { ...n, isRead: true } : n
       )
     );
+    try {
+      await api.get(`/notifications/read/${notificationId}`);
+    } catch (err) {
+      console.error("Failed to mark as read", err);
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    const unread = notifications.filter(n => !n.isRead);
     setNotifications(prev => 
       prev.map(n => ({ ...n, isRead: true }))
     );
+    try {
+      await Promise.all(unread.map(n => api.get(`/notifications/read/${n.id}`)));
+    } catch (err) {
+      console.error("Failed to mark all as read", err);
+    }
   };
 
   const addNotification = (notification) => {
