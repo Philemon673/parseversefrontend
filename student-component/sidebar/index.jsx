@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import SidebarBg from "@/assets/contentsider.png";
 import {
   Home,
@@ -142,58 +143,78 @@ function LogoutButton() {
         </button>
       </div>
 
-      {/* Confirmation modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => !loggingOut && setShowConfirm(false)}
-          />
-
-          {/* Modal card */}
-          <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-[320px] flex flex-col items-center gap-4">
-            {/* Icon */}
-            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
-              <LogOut className="w-7 h-7 text-red-500" />
-            </div>
-
-            <div className="text-center">
-              <h3 className="font-bold text-slate-800 text-base">Sign out of ParseVerse?</h3>
-              <p className="text-slate-500 text-sm mt-1">
-                You&apos;ll need to log back in to access your dashboard.
-              </p>
-            </div>
-
-            <div className="flex gap-3 w-full mt-1">
-              <button
-                onClick={() => setShowConfirm(false)}
-                disabled={loggingOut}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {loggingOut ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    Signing out…
-                  </>
-                ) : (
-                  "Sign Out"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Confirmation modal — rendered via portal so it always covers the full screen */}
+      {showConfirm && <SignOutModal loggingOut={loggingOut} onConfirm={handleLogout} onClose={() => setShowConfirm(false)} />}
     </>
+  );
+}
+
+// ── Portal-based sign-out modal ───────────────────────────────────────────────
+function SignOutModal({ loggingOut, onConfirm, onClose }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Prevent background scroll while modal is open
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ zIndex: 99999 }}
+    >
+      {/* Full-screen backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={() => !loggingOut && onClose()}
+      />
+
+      {/* Modal card */}
+      <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-[340px] flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-200">
+        {/* Icon */}
+        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+          <LogOut className="w-8 h-8 text-red-500" />
+        </div>
+
+        <div className="text-center">
+          <h3 className="font-bold text-slate-800 text-lg">Sign out of ParseVerse?</h3>
+          <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+            You&apos;ll need to log back in to access your dashboard.
+          </p>
+        </div>
+
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={onClose}
+            disabled={loggingOut}
+            className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loggingOut}
+            className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loggingOut ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Signing out…
+              </>
+            ) : (
+              "Sign Out"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }

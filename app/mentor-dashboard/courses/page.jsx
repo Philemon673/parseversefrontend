@@ -12,42 +12,11 @@ import { initVideoUpload, uploadVideoToBunny, createCourse, uploadThumbnail, upl
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const stats = [
-  {
-    label: "Total Courses",
-    value: "12",
-    growth: null,
-    icon: BookOpen,
-    iconBg: "bg-pink-100",
-    iconColor: "text-pink-600",
-  },
-  {
-    label: "Total Students",
-    value: "3,458",
-    growth: "+12%",
-    growthColor: "text-green-500",
-    icon: Users,
-    iconBg: "bg-green-100",
-    iconColor: "text-green-600",
-  },
-  {
-    label: "Total Earnings",
-    value: `${CURRENCY_SYMBOL}24,580`,
-    growth: "+18%",
-    growthColor: "text-green-500",
-    icon: DollarSign,
-    iconBg: "bg-orange-100",
-    iconColor: "text-orange-600",
-  },
-  {
-    label: "Avg Rating",
-    value: "4.8",
-    growth: "+0.2",
-    growthColor: "text-yellow-500",
-    icon: Award,
-    iconBg: "bg-yellow-100",
-    iconColor: "text-yellow-600",
-  },
+const skeletonStats = [
+  { label: "Total Courses",  value: "—", icon: BookOpen,   iconBg: "bg-pink-100",   iconColor: "text-pink-600" },
+  { label: "Total Students", value: "—", icon: Users,      iconBg: "bg-green-100",  iconColor: "text-green-600" },
+  { label: "Total Earnings", value: "—", icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+  { label: "Avg Rating",     value: "—", icon: Award,      iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
 ];
 
 export default function CoursesPage() {
@@ -114,11 +83,22 @@ export default function CoursesPage() {
     { label: "Drafts", count: drafts.length },
   ];
 
+  const totalEarnings = courseList.reduce((acc, c) => {
+    const price = Number(c.price) || 0;
+    const enrollments = c._count?.enrollments || 0;
+    return acc + (price * enrollments);
+  }, 0);
+
+  const ratedCourses = courseList.filter(c => c.rating);
+  const avgRating = ratedCourses.length > 0 
+    ? (ratedCourses.reduce((acc, c) => acc + Number(c.rating), 0) / ratedCourses.length).toFixed(1)
+    : "0.0";
+
   const dynamicStats = [
     { label: "Total Courses", value: String(courseList.length), icon: BookOpen, iconBg: "bg-pink-100", iconColor: "text-pink-600" },
     { label: "Total Students", value: totalStudents.toLocaleString(), growth: null, icon: Users, iconBg: "bg-green-100", iconColor: "text-green-600" },
-    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}0`, growth: null, icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
-    { label: "Avg Rating", value: "4.8", growth: null, icon: Award, iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
+    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}${totalEarnings.toLocaleString()}`, growth: null, icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+    { label: "Avg Rating", value: avgRating, growth: null, icon: Award, iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
   ];
 
   // Handle form submission
@@ -186,7 +166,7 @@ export default function CoursesPage() {
 
       {/* Stats Row */}
       <div className="flex gap-4">
-        {(loading ? stats : dynamicStats).map((stat) => (
+        {(loading ? skeletonStats : dynamicStats).map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>

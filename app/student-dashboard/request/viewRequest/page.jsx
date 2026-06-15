@@ -207,7 +207,7 @@ export default function RequestDetailsPage() {
             {/* Suggested Price */}
             <div className="space-y-1">
               <p className="text-xs font-semibold text-gray-500">Suggested Price</p>
-              <p className="text-lg font-bold text-gray-900">{req.suggestedPrice ? `FCFA ${req.suggestedPrice} /hr` : "Default Rate"}</p>
+              <p className="text-lg font-bold text-gray-900">{req.suggestedPrice ? `${process.env.NEXT_PUBLIC_CURRENCY || "FCFA"} ${req.suggestedPrice} /hr` : "Default Rate"}</p>
               <p className="text-xs text-gray-400">Mentor can suggest a different rate</p>
             </div>
 

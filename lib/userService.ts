@@ -37,6 +37,132 @@ const handleApiError = (error: any, operation: string) => {
 };
 
 export const userService = {
+  async getMyBadges() {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/badges/my`, {
+        method: 'GET',
+      });
+      if (!response.ok) return { total: 0, badges: [] };
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching badges:', error);
+      return { total: 0, badges: [] };
+    }
+  },
+
+  async checkBadges() {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/badges/check`, {
+        method: 'POST',
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking badges:', error);
+      return null;
+    }
+  },
+
+  // ── Scheduling & Availability API ──────────────────────────────────────────
+  async getSessions() {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule`, { method: 'GET' });
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      return [];
+    }
+  },
+
+  async createSession(data: any) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to create session');
+      }
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async updateSession(id: string, data: any) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to update session');
+      }
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async deleteSession(id: string) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/schedule/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to delete session');
+      }
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  async updateAvailability(availability: any) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/me`, {
+        method: 'PATCH',
+        body: JSON.stringify({ availability }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to save availability');
+      }
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // ── Notifications API ──────────────────────────────────────────────────────
+  async getUserNotifications() {
+    try {
+      // Get the profile first to get the user ID, or use 'me' if backend supports it.
+      // Wait, backend expects /notifications/user/:userId
+      const user = await this.getUserProfile();
+      if (!user || !user.id) return [];
+      const response = await secureRequest(`${API_BASE_URL}/notifications/user/${user.id}`, { method: 'GET' });
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  },
+
+  async markNotificationAsRead(id: string) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/notifications/read/${id}`, { method: 'GET' });
+      if (!response.ok) throw new Error('Failed to mark notification as read');
+      return true;
+    } catch (error) {
+      console.error('Error marking notification read:', error);
+      return false;
+    }
+  },
+
   // Get current logged-in user profile via /users/me
   async getUserProfile(_userId?: any) {
     try {

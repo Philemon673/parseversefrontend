@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { DollarSign, TrendingUp, Clock, Hash, ChevronDown, X, Check, Plus } from "lucide-react";
+import { CURRENCY_SYMBOL, formatCurrencySigned } from "@/lib/currency";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 type TxStatus = "Completed" | "Paid" | "Pending";
@@ -83,7 +84,7 @@ function AddTxModal({ onSave, onClose }: { onSave: (t: Omit<Transaction, "id">) 
           </div>
           <div className="flex gap-3">
             <div className="flex-1 flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-700">Amount ($) — use negative for payouts</label>
+              <label className="text-xs font-semibold text-gray-700">Amount ({CURRENCY_SYMBOL}) — use negative for payouts</label>
               <input type="number" value={amount} onChange={(e) => { setAmount(e.target.value); setError(""); }} placeholder="e.g. 60 or -300" className="px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400" />
             </div>
             <div className="flex-1 flex flex-col gap-1">
@@ -127,9 +128,9 @@ export default function PaymentTab() {
   }, [transactions]);
 
   const statsCards = [
-    { icon: <DollarSign className="w-4 h-4 text-indigo-500" />, bg: "bg-indigo-50", label: "Total Earnings",  value: `$${stats.income.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,   sub: "All time" },
-    { icon: <TrendingUp  className="w-4 h-4 text-green-500" />, bg: "bg-green-50",  label: "This Month",     value: `$${stats.thisMonth.toFixed(2)}`,   sub: "Recent sessions" },
-    { icon: <Clock       className="w-4 h-4 text-orange-400"/>, bg: "bg-orange-50", label: "Pending Payout", value: `$${stats.pending.toFixed(2)}`,     sub: "Awaiting payment" },
+    { icon: <DollarSign className="w-4 h-4 text-indigo-500" />, bg: "bg-indigo-50", label: "Total Earnings",  value: `${CURRENCY_SYMBOL} ${stats.income.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,   sub: "All time" },
+    { icon: <TrendingUp  className="w-4 h-4 text-green-500" />, bg: "bg-green-50",  label: "This Month",     value: `${CURRENCY_SYMBOL} ${stats.thisMonth.toFixed(2)}`,   sub: "Recent sessions" },
+    { icon: <Clock       className="w-4 h-4 text-orange-400"/>, bg: "bg-orange-50", label: "Pending Payout", value: `${CURRENCY_SYMBOL} ${stats.pending.toFixed(2)}`,     sub: "Awaiting payment" },
     { icon: <Hash        className="w-4 h-4 text-purple-500"/>, bg: "bg-purple-50", label: "Total Sessions", value: String(stats.sessions),              sub: "All time" },
   ];
 
@@ -241,7 +242,7 @@ export default function PaymentTab() {
                     <td className="py-2.5 text-gray-700 font-medium">{t.description}</td>
                     <td className="py-2.5 text-gray-500">{t.session}</td>
                     <td className={`py-2.5 font-semibold ${t.amount < 0 ? "text-red-500" : "text-green-600"}`}>
-                      {t.amount < 0 ? `-$${Math.abs(t.amount).toFixed(2)}` : `+$${t.amount.toFixed(2)}`}
+                      {formatCurrencySigned(t.amount, 2)}
                     </td>
                     <td className="py-2.5">
                       <select

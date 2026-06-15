@@ -26,7 +26,7 @@ const defaultTrending = [
 const categories = [ 
   {label:"All", href:"/student-dashboard/Home"}, 
   {label:"Courses", href:"/student-dashboard/Home/courses"},
-  {label:"Resources", href:"/student-dashboard/Home/Resources"},
+  {label:"Resources", href:"/student-dashboard/Home/resources"},
   {label:"Live", href:"/student-dashboard/Home/live"}
 ];
 

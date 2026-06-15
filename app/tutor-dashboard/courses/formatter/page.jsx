@@ -1,13 +1,6 @@
-const CURRENCY_SYMBOL = process.env.NEXT_PUBLIC_CURRENCY || "FCFA";
-
-export function formatCurrency(amount) {
-  return `${CURRENCY_SYMBOL}${Number(amount).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
-}
-
-export { CURRENCY_SYMBOL };
+// Re-exports from the shared currency utility.
+// All components that import from here continue to work without changes.
+export { CURRENCY_SYMBOL, formatCurrency, formatCurrencySigned } from "@/lib/currency";
 
 export default function DummyFormatterPage() {
   return null;

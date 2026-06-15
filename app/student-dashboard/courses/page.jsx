@@ -5,8 +5,7 @@ import { Search, ChevronDown, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getMyEnrolledCourses } from "../../../lib/courseService";
 
-const categories = ["All Categories", "Web Development", "Data Science", "Design", "Marketing"];
-
+const defaultCategories = ["All Categories", "Web Development", "Data Science", "Design", "Marketing"];
 // ── Star Rating ───────────────────────────────────────────────────────────────
 
 function StarRating({ rating }) {
@@ -139,6 +138,9 @@ export default function CoursesPage() {
     fetchEnrollments();
   }, []);
 
+  const dynamicCategories = ["All Categories", ...new Set(enrollments.map(e => e.course.category).filter(Boolean))];
+  const activeCategories = dynamicCategories.length > 1 ? dynamicCategories : defaultCategories;
+
   // Compute live counts from real data
   const completedCount = enrollments.filter((e) =>
     (e.progress?.completedLessons || 0) >= (e.course._count?.modules || 1)
@@ -149,7 +151,6 @@ export default function CoursesPage() {
     { label: "All", count: enrollments.length, key: "all" },
     { label: "In Progress", count: inProgressCount, key: "progress" },
     { label: "Completed", count: completedCount, key: "completed" },
-    { label: "Saved", count: null, key: "saved" },
   ];
 
   const filtered = enrollments.filter((enrollment) => {
@@ -159,10 +160,11 @@ export default function CoursesPage() {
     let matchTab = true;
     if (activeTab === "progress") matchTab = !isCompleted;
     if (activeTab === "completed") matchTab = isCompleted;
-    if (activeTab === "saved") return false; // Saved not yet implemented
 
     const matchSearch = course.title?.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
+    const matchCategory = category === "All Categories" || course.category === category;
+    
+    return matchTab && matchSearch && matchCategory;
   });
 
   return (
@@ -192,7 +194,7 @@ export default function CoursesPage() {
             onChange={(e) => setCategory(e.target.value)}
             className="appearance-none pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 shadow-sm cursor-pointer"
           >
-            {categories.map((c) => (
+            {activeCategories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
@@ -238,11 +240,6 @@ export default function CoursesPage() {
           {filtered.map((enrollment) => (
             <CourseCard key={enrollment.id || enrollment.courseId} enrollment={enrollment} />
           ))}
-        </div>
-      ) : activeTab === "saved" ? (
-        <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-400">
-          <BookOpen className="w-10 h-10 text-slate-200" />
-          <p className="text-sm font-medium">Saved courses coming soon.</p>
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center h-56 gap-3 text-slate-400">

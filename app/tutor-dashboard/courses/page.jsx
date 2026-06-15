@@ -51,11 +51,22 @@ export default function CoursesPage() {
   const drafts        = courseList.filter((c) => !c.isPublished && c.status !== "Published");
   const totalStudents = courseList.reduce((a, c) => a + (c._count?.enrollments ?? 0), 0);
 
+  const totalEarnings = courseList.reduce((acc, c) => {
+    const price = Number(c.price) || 0;
+    const enrollments = c._count?.enrollments || 0;
+    return acc + (price * enrollments);
+  }, 0);
+
+  const ratedCourses = courseList.filter(c => c.rating);
+  const avgRating = ratedCourses.length > 0 
+    ? (ratedCourses.reduce((acc, c) => acc + Number(c.rating), 0) / ratedCourses.length).toFixed(1)
+    : "0.0";
+
   const dynamicStats = [
     { label: "Total Courses",  value: String(courseList.length),      icon: BookOpen,   iconBg: "bg-pink-100",   iconColor: "text-pink-600" },
     { label: "Total Students", value: totalStudents.toLocaleString(), icon: Users,      iconBg: "bg-green-100",  iconColor: "text-green-600" },
-    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}0`,          icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
-    { label: "Avg Rating",     value: "4.8",                          icon: Award,      iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
+    { label: "Total Earnings", value: `${CURRENCY_SYMBOL}${totalEarnings.toLocaleString()}`, icon: DollarSign, iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+    { label: "Avg Rating",     value: avgRating,                      icon: Award,      iconBg: "bg-yellow-100", iconColor: "text-yellow-600" },
   ];
 
   async function handlePublishCourse(courseId) {

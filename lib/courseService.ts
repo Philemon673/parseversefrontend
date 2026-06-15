@@ -210,3 +210,12 @@ export async function deleteCourse(courseId: string) {
   }
 }
 
+/** Get students enrolled in an instructor's course */
+export async function getCourseEnrollments(courseId: string) {
+  try {
+    return await api.get(`/courses/${courseId}/enrollments`);
+  } catch (err) {
+    throw new Error('Failed to fetch course enrollments');
+  }
+}
+

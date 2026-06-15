@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { getCourse, getCourseModules } from "@/lib/courseService";
 import { getCourseReviews } from "@/lib/reviewService";
 import { FileText } from "lucide-react";
+import { CURRENCY_SYMBOL } from "@/lib/currency";
 import {
   ThumbsUp,
   Heart,
@@ -553,7 +554,7 @@ function CoursePlayerPageContent() {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Price</span>
-                    <span className="text-xs font-bold text-slate-700">{course.isFree ? "Free" : `$${course.price}`}</span>
+                    <span className="text-xs font-bold text-slate-700">{course.isFree ? "Free" : `${CURRENCY_SYMBOL} ${course.price}`}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Modules</span>

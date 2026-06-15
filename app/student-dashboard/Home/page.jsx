@@ -29,65 +29,6 @@ import Banners from "./banner/page";
 import { getRelevantLiveSessions } from "@/lib/sessionService";
 import { userService } from "@/lib/userService";
 
-const posts = [
-  {
-    id: 2,
-    author: "Mashok Khan",
-    time: "1h ago",
-    role: "Mentor",
-    isVip: true,
-    mentorCount: null,
-    image: Post2,
-    tags: ["Python", "Programming"],
-    pinnedContent: {
-      author: "Mashok Khan",
-      time: "1h ago",
-      isVip: false,
-      mentorCount: null,
-      text: "Excited to share a new Data Science Introduction video! 🚀 This video covers the essentials of what Data Science is and how you can start your journey!",
-      hashtags: ["#DataScience", "#MachineLearning"],
-    },
-    likes: 421,
-    dislikes: 18,
-    comments: 87,
-    commentInput: true,
-    initialComments: [
-      { id: 1, name: "Donald Williams", initials: "DW", text: "Data Science is the future!", time: "20 min ago" },
-      { id: 2, name: "Marissa Ray", initials: "MR", text: "Loved this breakdown 🔥", time: "35 min ago" },
-      { id: 3, name: "Sebastian Kim", initials: "SK", text: "Very well explained!", time: "40 min ago" },
-    ],
-  },
-];
-
-const videoPost = {
-  id: 3,
-  author: "Bilal Ahmed",
-  time: "3h ago",
-  role: "Instructor",
-  isVip: true,
-  mentorCount: 3,
-  videoThumb: "https://images.unsplash.com/photo-1619410283995-43d9134e7656?w=800&q=80",
-  videoDuration: "12:45",
-  tags: ["JavaScript", "WebDev"],
-  pinnedContent: {
-    author: "Bilal Ahmed",
-    time: "3h ago",
-    isVip: true,
-    mentorCount: 2,
-    text: "Just dropped a full JavaScript crash course! 🎬 From variables to async/await — everything you need to get started with modern JS development.",
-    hashtags: ["#JavaScript", "#WebDevelopment", "#Coding"],
-  },
-  likes: 612,
-  dislikes: 22,
-  comments: 134,
-  commentInput: true,
-  initialComments: [
-    { id: 1, name: "Martin Nel", initials: "MN", text: "Best JS course I've seen!", time: "1h ago" },
-    { id: 2, name: "Marissa Ray", initials: "MR", text: "async/await section was 🔥", time: "2h ago" },
-    { id: 3, name: "Donald Williams", initials: "DW", text: "Shared this with my whole team.", time: "2h ago" },
-  ],
-};
-
 
 // ── Sub Components ────────────────────────────────────────────────────────────
 
@@ -403,17 +344,25 @@ function LiveSessionAlert({ activeSession, onClose }) {
 
         <div className="flex items-center justify-between lg:justify-end gap-6 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-50">
           <div className="flex items-center -space-x-3">
-            {[1, 2, 3, 4].map((i) => (
-              <img
-                key={i}
-                src={`https://i.pravatar.cc/100?u=${i + 20}`}
-                className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm"
-                alt="participant"
-              />
-            ))}
-            <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
-              +{activeSession.maxStudents > 4 ? activeSession.maxStudents - 4 : 0}
-            </div>
+            {activeSession.participants && activeSession.participants.length > 0 ? (
+              activeSession.participants.slice(0, 4).map((p, i) => (
+                <img
+                  key={i}
+                  src={p.avatar || `https://ui-avatars.com/api/?name=${p.firstName}+${p.lastName}&background=random`}
+                  className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm bg-slate-100"
+                  alt="participant"
+                />
+              ))
+            ) : (
+              <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center shadow-sm">
+                <Users className="w-4 h-4 text-slate-400" />
+              </div>
+            )}
+            {(activeSession.currentParticipants || (activeSession.participants?.length)) > 4 && (
+              <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-black text-slate-400">
+                +{(activeSession.currentParticipants || activeSession.participants.length) - 4}
+              </div>
+            )}
           </div>
 
           <button

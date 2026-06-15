@@ -1,4 +1,5 @@
 "use client";
+import { CURRENCY_SYMBOL } from "@/lib/currency";
 
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -463,7 +464,7 @@ function SearchResultsContent() {
               reviews: 0,
               thumbnail: course.thumbnailUrl || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop&q=60",
               tags: course.category ? [course.category] : ["General"],
-              price: course.price > 0 ? `$${course.price}` : "Free",
+              price: course.price > 0 ? `${CURRENCY_SYMBOL} ${course.price}` : "Free",
               level: course.level || "Beginner",
               time: new Date(course.createdAt).toLocaleDateString(),
               likes: 0,

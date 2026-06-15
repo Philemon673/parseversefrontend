@@ -60,26 +60,22 @@ function MedalIcon() {
   );
 }
 
-const achievements = [
-  { icon: <CrownIcon />, bg: "bg-yellow-50" },
-  { icon: <TrophyIcon />, bg: "bg-yellow-50" },
-  { icon: <TargetIcon />, bg: "bg-indigo-50" },
-  { icon: <MedalIcon />, bg: "bg-red-50" },
+const defaultAchievements = [
+  { icon: <CrownIcon />, bg: "bg-yellow-50", tooltip: "New Member" }
 ];
 
-const roleItems = [
+const getRoleItems = (rolePrefix) => [
   { icon: <Users className="w-4 h-4 text-purple-500" />, label: "Mentor", danger: false },
   {
     icon: <BookOpen size={14} />,
     label: "View Courses",
     danger: false,
     primary: true,
-    onClick: () => { window.location.href = "/courses"; },
+    onClick: () => { window.location.href = `/${rolePrefix}-dashboard/courses`; },
   },
 ];
 
 const supportItems = [
-  { icon: <Users className="w-4 h-4 text-purple-500" />, label: "Become a Mentor", danger: false },
   { icon: <HelpCircle className="w-4 h-4 text-blue-500" />, label: "Support", danger: false },
   { icon: <UserPlus className="w-4 h-4 text-orange-400" />, label: "Invite friend", danger: false },
   { icon: <Trash2 className="w-4 h-4 text-white" />, label: "Delete Account", danger: true },
@@ -545,6 +541,7 @@ export default function ProfilePage() {
   const [avatarSrc, setAvatarSrc] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userBadges, setUserBadges] = useState([]);
 
   const fetchUserProfile = async () => {
     try {
@@ -555,6 +552,12 @@ export default function ProfilePage() {
         if (data.avatar) {
           setAvatarSrc(data.avatar);
         }
+      }
+      // Check for new badges and fetch user's badges
+      await userService.checkBadges();
+      const badgeData = await userService.getMyBadges();
+      if (badgeData && badgeData.badges) {
+        setUserBadges(badgeData.badges);
       }
     } catch (err) {
       console.error("Failed to load profile:", err);
@@ -648,22 +651,29 @@ export default function ProfilePage() {
               </label>
             </div>
 
-            {/* Message button */}
-            <div className="px-3 pt-2 pb-1">
-              <button className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-semibold hover:bg-indigo-100 transition">
-                <MessageCircle className="w-3.5 h-3.5" /> Message
-              </button>
-            </div>
+           
 
             {/* Achievements */}
             <div className="px-3 py-2 border-b border-gray-100">
               <p className="text-gray-700 text-xs font-semibold mb-1.5">Achievements</p>
-              <div className="flex gap-1.5">
-                {achievements.map(({ icon, bg }, i) => (
-                  <div key={i} className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center`}>
-                    {icon}
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-1.5">
+                {userBadges.length > 0 ? (
+                  userBadges.map(({ badge }, i) => (
+                    <div 
+                      key={i} 
+                      className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center group relative cursor-help"
+                      title={badge.name || badge.type}
+                    >
+                      <BadgeCheck className="w-5 h-5 text-indigo-500" />
+                    </div>
+                  ))
+                ) : (
+                  defaultAchievements.map(({ icon, bg, tooltip }, i) => (
+                    <div key={i} className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center`} title={tooltip}>
+                      {icon}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -671,7 +681,7 @@ export default function ProfilePage() {
             <div className="px-3 py-2 border-b border-gray-100">
               <p className="text-gray-700 text-xs font-semibold mb-1">Role</p>
               <div className="flex flex-col gap-0.5">
-                {roleItems.map(({ icon, label, danger, primary, onClick }) => (
+                {getRoleItems(user?.role ? user.role.toLowerCase() : 'mentor').map(({ icon, label, danger, primary, onClick }) => (
                   <button
                     key={label}
                     onClick={onClick}
@@ -692,15 +702,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Direct Request */}
-            <div className="px-3 py-2 border-b border-gray-100">
-              <button
-                onClick={() => router.push(`/student-dashboard/request?role=mentor&mentorId=${user?.id}`)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition shadow-sm"
-              >
-                Request Mentorship
-              </button>
-            </div>
+           
 
             {/* Support */}
             <div className="px-3 py-2">

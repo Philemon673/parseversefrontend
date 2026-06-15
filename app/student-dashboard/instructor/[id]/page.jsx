@@ -7,276 +7,461 @@ import {
   Users,
   BookOpen,
   Star,
-  BadgeCheck,
   Mail,
   MapPin,
+  User,
   CalendarDays,
-  Award,
-  Video,
-  FileText,
+  BadgeCheck,
+  ArrowRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import heroBg from "@/assets/bannerprofile.png";
 
-const AVATAR_COLORS = [
-  "bg-indigo-500", "bg-violet-500", "bg-pink-500", "bg-amber-500",
-  "bg-emerald-500", "bg-blue-500", "bg-rose-500", "bg-teal-500",
+/* ── helpers ── */
+const GRAD = [
+  "from-violet-500 to-blue-400",
+  "from-indigo-500 to-purple-400",
+  "from-pink-500 to-rose-400",
+  "from-amber-500 to-orange-400",
+  "from-emerald-500 to-teal-400",
+  "from-blue-500 to-cyan-400",
 ];
-
-function initials(name) {
-  if (!name) return "U";
-  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+function getInitials(n) {
+  if (!n) return "U";
+  return n.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
-
-function avatarColor(name) {
-  if (!name) return AVATAR_COLORS[0];
+function getGrad(n) {
+  if (!n) return GRAD[0];
   let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[h];
+  for (const c of n) h = (h * 31 + c.charCodeAt(0)) % GRAD.length;
+  return GRAD[h];
 }
 
+/* ─────────────────────────── */
 export default function InstructorProfilePage() {
   const router = useRouter();
-  const params = useParams();
-  const { id } = params;
+  const { id } = useParams();
 
   const [instructor, setInstructor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchInstructor() {
+    if (!id) return;
+    (async () => {
       try {
-        setLoading(true);
-        // We fetch the user by ID
         const user = await api.get(`/users/${id}`);
-        
-        if (!user || (user.role !== "MENTOR" && user.role !== "TUTOR")) {
+        if (!user || !["MENTOR", "TUTOR"].includes(user.role))
           throw new Error("Instructor not found");
-        }
 
-        const getAvatarUrl = (url) => {
+        const avatarUrl = (url) => {
           if (!url) return null;
           if (url.startsWith("http")) return url;
-          if (url.startsWith("/")) url = url.slice(1);
-          return `http://localhost:3001/${url}`;
+          return `http://localhost:3001/${url.replace(/^\//, "")}`;
         };
 
-        const formattedInstructor = {
+        setInstructor({
           id: user.id,
           name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
           role: user.role === "MENTOR" ? "Mentor" : "Tutor",
-          spec: user.interests?.length > 0 ? user.interests[0] : "Generalist",
+          spec: user.interests?.[0] ?? "Generalist",
           bio: user.bio || "This instructor hasn't provided a bio yet.",
           email: user.email,
           country: user.country,
           joined: user.createdAt,
-          followers: user.stats?.followers || 0,
-          coursesCount: user._count?.courses || user.stats?.courses || 0,
-          rating: 5.0, // Hardcoded for display until rating system is fully implemented
-          reviews: user.stats?.reviews || 0,
-          avatar: getAvatarUrl(user.avatar)
-        };
-
-        setInstructor(formattedInstructor);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to load instructor profile.");
+          followers: user.stats?.followers ?? 0,
+          coursesCount: user._count?.courses ?? user.stats?.courses ?? 0,
+          rating: 5,
+          reviews: user.stats?.reviews ?? 0,
+          avatar: avatarUrl(user.avatar),
+        });
+      } catch (e) {
+        setError(e.message || "Failed to load.");
       } finally {
         setLoading(false);
       }
-    }
-
-    if (id) {
-      fetchInstructor();
-    }
+    })();
   }, [id]);
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-          <p className="text-sm font-medium text-slate-500">Loading profile...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
       </div>
     );
-  }
 
-  if (error || !instructor) {
+  if (error || !instructor)
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center">
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-red-100 max-w-md text-center">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Profile Not Found</h2>
-          <p className="text-sm text-slate-500 mb-6">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="text-center p-8 rounded-3xl border border-red-100 shadow max-w-sm">
+          <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          <p className="font-bold text-gray-800 mb-1">Profile Not Found</p>
+          <p className="text-sm text-gray-400 mb-5">{error}</p>
           <button
             onClick={() => router.back()}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
+            className="bg-violet-600 text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-violet-700 transition"
           >
             Go Back
           </button>
         </div>
       </div>
     );
-  }
+
+  const fn = instructor.name.split(" ")[0];
+  const isMentor = instructor.role === "Mentor";
+  const year = instructor.joined ? new Date(instructor.joined).getFullYear() : "2026";
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] relative">
-      {/* Back button */}
-      <div className="absolute top-4 left-4 z-20">
+    /* Full page uses the background image */
+    <div
+      className="min-h"
+
+    >
+      {/* Back button — top left of page */}
+      <div className="px-8 pt-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 px-4 py-2 bg-white/80 backdrop-blur-md border border-slate-200 text-slate-600 text-sm font-semibold rounded-xl hover:bg-white transition shadow-sm"
+          className="flex items-center gap-1.5 bg-white rounded-full px-4 py-2 text-sm font-semibold text-gray-700 shadow-md hover:shadow-lg transition-shadow"
         >
           <ChevronLeft className="w-4 h-4" />
           Back
         </button>
       </div>
 
-      {/* Header Banner */}
-      <div className="h-64 w-full relative overflow-hidden bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 rounded-[2.5rem] shadow-sm">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20" />
+      {/* White card — centered, with top margin to sit below the back button */}
+      <div className="flex justify-center px-6 pt-10 pb-12">
+        <div
+          className="bg-white w-full rounded-3xl overflow-hidden"
+          style={{
+            maxWidth: 980,
+            boxShadow: "0 8px 48px 0 rgba(109,40,217,0.10)",
+          }}
+        >
+          {/* ══ TWO-COLUMN LAYOUT ══ */}
+          <div className="flex flex-col md:flex-row">
+
+            {/* ════════════ LEFT PANEL ════════════ */}
+            <div
+              className="flex flex-col items-center border-r border-gray-100 flex-shrink-0"
+              style={{ width: 300, padding: "44px 36px 40px" }}
+            >
+              {/* Avatar — large rounded square gradient */}
+              <div
+                className={`flex items-center justify-center rounded-[20px] bg-gradient-to-br ${getGrad(instructor.name)} overflow-hidden mb-5`}
+                style={{
+                  width: 148,
+                  height: 148,
+                  boxShadow: "0 6px 24px rgba(109,40,217,0.22)",
+                }}
+              >
+                {instructor.avatar ? (
+                  <img
+                    src={instructor.avatar}
+                    alt={instructor.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="text-white font-black select-none"
+                    style={{ fontSize: 46, letterSpacing: 1 }}
+                  >
+                    {getInitials(instructor.name)}
+                  </span>
+                )}
+              </div>
+
+              {/* Name + verified badge */}
+              <div className="flex items-center gap-1.5 mb-2 text-center">
+                <span className="text-[22px] font-extrabold text-gray-900 leading-tight">
+                  {instructor.name}
+                </span>
+                <BadgeCheck className="w-6 h-6 text-blue-500 flex-shrink-0" />
+              </div>
+
+              {/* MENTOR pill */}
+              <span
+                className="text-[11px] font-bold uppercase tracking-widest rounded-full border px-5 py-1 mb-2"
+                style={
+                  isMentor
+                    ? { background: "#f0edff", color: "#7c3aed", borderColor: "#e0d9ff" }
+                    : { background: "#ecfdf5", color: "#059669", borderColor: "#a7f3d0" }
+                }
+              >
+                {instructor.role}
+              </span>
+
+              {/* Specialization */}
+              <span
+                className="font-bold uppercase mb-7 text-center"
+                style={{ fontSize: 11, letterSpacing: "0.18em", color: "#7c3aed" }}
+              >
+                {instructor.spec}
+              </span>
+
+              {/* CTA button */}
+              <button
+                onClick={() =>
+                  router.push(
+                    `/student-dashboard/request?role=${instructor.role.toLowerCase()}&mentorId=${instructor.id}`
+                  )
+                }
+                className="w-full flex items-center justify-center gap-2 text-white font-bold rounded-2xl transition-all active:scale-[0.98]"
+                style={{
+                  background: "linear-gradient(90deg, #7c3aed 0%, #9333ea 100%)",
+                  padding: "15px 20px",
+                  fontSize: 15,
+                  marginBottom: 10,
+                  boxShadow: "0 4px 16px rgba(124,58,237,0.38)",
+                }}
+              >
+                <CalendarDays className="w-[1px] h-[18px]" />
+                Request {isMentor ? "Mentorship" : "Tutoring"}
+                <ArrowRight className="w-[18px] h-[18px]" />
+              </button>
+
+              {/* Subtitle under button */}
+              <p className="text-xs text-center leading-relaxed mb-8" style={{ color: "#9ca3af" }}>
+                Send a request to schedule<br />a private session with {fn}.
+              </p>
+
+              {/* Trophy / tagline card */}
+              <div
+                className="w-full rounded-2xl flex items-center gap-3"
+                style={{
+                  background: "#fafafa",
+                  border: "1px solid #efefef",
+                  padding: "14px 16px",
+                }}
+              >
+                {/* Trophy SVG illustration */}
+                <div className="flex-shrink-0" style={{ width: 54, height: 58 }}>
+                  <svg viewBox="0 0 54 58" width="54" height="58" fill="none">
+                    {/* base platform */}
+                    <rect x="13" y="49" width="28" height="6" rx="3" fill="#7c3aed" />
+                    {/* stem */}
+                    <rect x="22" y="38" width="10" height="12" rx="2" fill="#d97706" />
+                    {/* cup bottom ellipse */}
+                    <ellipse cx="27" cy="38" rx="13" ry="4" fill="#b45309" />
+                    {/* cup body */}
+                    <rect x="14" y="12" width="26" height="26" rx="5" fill="#fbbf24" />
+                    {/* cup top ellipse */}
+                    <ellipse cx="27" cy="12" rx="13" ry="5" fill="#fcd34d" />
+                    {/* handles */}
+                    <path d="M14 17 Q5 17 5 25 Q5 33 14 33" stroke="#f59e0b" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    <path d="M40 17 Q49 17 49 25 Q49 33 40 33" stroke="#f59e0b" strokeWidth="3" fill="none" strokeLinecap="round" />
+                    {/* star */}
+                    <polygon
+                      points="27,6 29,11 34,11 30,14.5 31.5,20 27,17 22.5,20 24,14.5 20,11 25,11"
+                      fill="#fde68a"
+                    />
+                  </svg>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 leading-snug mb-2.5" style={{ fontSize: 13 }}>
+                    Empowering learners<br />to achieve more.
+                  </p>
+                  {/* Stacked avatars */}
+                  <div className="flex items-center">
+                    {[
+                      { bg: "#f97316" },
+                      { bg: "#3b82f6" },
+                      { bg: "#22c55e" },
+                    ].map(({ bg }, i) => (
+                      <span
+                        key={i}
+                        className="rounded-full border-2 border-white flex-shrink-0"
+                        style={{
+                          width: 28,
+                          height: 28,
+                          background: bg,
+                          marginLeft: i === 0 ? 0 : -9,
+                          position: "relative",
+                          zIndex: 3 - i,
+                        }}
+                      />
+                    ))}
+                    <span
+                      className="font-semibold rounded-full"
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 11,
+                        color: "#7c3aed",
+                        background: "#ede9fe",
+                        padding: "2px 9px",
+                      }}
+                    >
+                      +{Math.max(instructor.followers, 128)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ════════════ RIGHT PANEL ════════════ */}
+            <div className="flex-1 flex flex-col" style={{ padding: "40px 40px 40px" }}>
+
+              {/* ── STATS ROW ── */}
+              {/* 3 cells, no outer border, separated by thin vertical lines */}
+              <div
+                className="flex items-center mb-8 pb-8"
+                style={{ borderBottom: "1px solid #f3f4f6" }}
+              >
+                {/* Followers */}
+                <div className="flex items-center gap-3 flex-1">
+                  <span
+                    className="flex items-center justify-center rounded-full flex-shrink-0"
+                    style={{ width: 48, height: 48, background: "#f5f3ff" }}
+                  >
+                    <Users className="w-[22px] h-[22px]" style={{ color: "#7c6aed" }} />
+                  </span>
+                  <div>
+                    <div className="font-black text-gray-900 leading-none" style={{ fontSize: 26 }}>
+                      {instructor.followers}
+                    </div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: 10, color: "#9ca3af", marginTop: 3 }}>
+                      Followers
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ width: 1, height: 52, background: "#f3f4f6" }} />
+
+                {/* Courses */}
+                <div className="flex items-center gap-3 flex-1" style={{ paddingLeft: 32 }}>
+                  <span
+                    className="flex items-center justify-center rounded-full flex-shrink-0"
+                    style={{ width: 48, height: 48, background: "#f5f3ff" }}
+                  >
+                    <BookOpen className="w-[22px] h-[22px]" style={{ color: "#7c6aed" }} />
+                  </span>
+                  <div>
+                    <div className="font-black text-gray-900 leading-none" style={{ fontSize: 26 }}>
+                      {instructor.coursesCount}
+                    </div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: 10, color: "#9ca3af", marginTop: 3 }}>
+                      Courses
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ width: 1, height: 52, background: "#f3f4f6" }} />
+
+                {/* Reviews */}
+                <div className="flex items-center gap-3 flex-1" style={{ paddingLeft: 32 }}>
+                  <span
+                    className="flex items-center justify-center rounded-full flex-shrink-0"
+                    style={{ width: 48, height: 48, background: "#fffbeb" }}
+                  >
+                    <Star className="w-[22px] h-[22px] fill-yellow-300" style={{ color: "#f59e0b" }} />
+                  </span>
+                  <div>
+                    <div className="font-black text-gray-900 leading-none" style={{ fontSize: 26 }}>
+                      {instructor.rating}
+                    </div>
+                    <div className="font-bold uppercase tracking-widest" style={{ fontSize: 10, color: "#9ca3af", marginTop: 3 }}>
+                      Reviews
+                    </div>
+                    <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 1 }}>
+                      ({instructor.reviews} Reviews)
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── ABOUT SECTION ── */}
+              <div className="mb-8">
+                <h2 className="font-extrabold text-gray-900 mb-1" style={{ fontSize: 18 }}>
+                  About {fn}
+                </h2>
+                {/* violet underline */}
+                <div style={{ width: 36, height: 3, background: "#7c3aed", borderRadius: 9, marginBottom: 14 }} />
+                <p
+                  style={{
+                    fontSize: 14,
+                    lineHeight: 1.65,
+                    color: instructor.bio.includes("hasn't provided") ? "#9ca3af" : "#4b5563",
+                  }}
+                >
+                  {instructor.bio}
+                </p>
+              </div>
+
+              {/* ── INFO CARDS 2×2 ── */}
+              <div className="grid grid-cols-2 gap-4">
+                <InfoCard
+                  icon={<Mail className="w-5 h-5" style={{ color: "#7c6aed" }} />}
+                  label="CONTACT"
+                  value={instructor.email || "Hidden"}
+                />
+                <InfoCard
+                  icon={<MapPin className="w-5 h-5" style={{ color: "#7c6aed" }} />}
+                  label="LOCATION"
+                  value={instructor.country || "Not specified"}
+                />
+                <InfoCard
+                  icon={<User className="w-5 h-5" style={{ color: "#7c6aed" }} />}
+                  label="EXPERIENCE LEVEL"
+                  value="Expert"
+                />
+                <InfoCard
+                  icon={<CalendarDays className="w-5 h-5" style={{ color: "#7c6aed" }} />}
+                  label="MEMBER SINCE"
+                  value={String(year)}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
-      {/* Profile Content Container */}
-      <div className="max-w-5xl mx-auto px-6 -mt-24 relative z-10">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-8 flex flex-col md:flex-row gap-8">
-          
-          {/* Avatar & Action Section (Left) */}
-          <div className="flex flex-col items-center w-full md:w-64 flex-shrink-0">
-            <div className="w-40 h-40 rounded-3xl overflow-hidden border-4 border-white shadow-xl shadow-indigo-100/50 bg-white mb-5 -mt-16">
-              {instructor.avatar ? (
-                <img src={instructor.avatar} alt={instructor.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className={`w-full h-full flex items-center justify-center text-white text-5xl font-black ${avatarColor(instructor.name)}`}>
-                  {initials(instructor.name)}
-                </div>
-              )}
-            </div>
+      {/* ── FOOTER NOTE ── */}
+      <div className="flex items-center justify-center gap-2 pb-8" style={{ fontSize: 14, color: "#6b7280" }}>
+        <BookOpen className="w-5 h-5" style={{ color: "#7c3aed" }} />
+        <span>
+          Check out the{" "}
+          <a href="/search" className="font-semibold hover:underline" style={{ color: "#7c3aed" }}>
+            search page
+          </a>{" "}
+          to find courses published by {fn}.
+        </span>
+      </div>
+    </div>
+  );
+}
 
-            <h1 className="text-2xl font-black text-slate-900 text-center flex items-center gap-1.5 mb-1">
-              {instructor.name}
-              <BadgeCheck className="w-5 h-5 text-blue-500" />
-            </h1>
-            
-            <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full mb-3 ${
-              instructor.role === "Mentor" 
-                ? "bg-indigo-50 text-indigo-700 border border-indigo-100" 
-                : "bg-emerald-50 text-emerald-700 border border-emerald-100"
-            }`}>
-              {instructor.role}
-            </span>
-
-            <p className="text-sm font-semibold text-indigo-500/80 uppercase tracking-widest text-center mb-6">
-              {instructor.spec}
-            </p>
-
-            <button
-              onClick={() => router.push(`/student-dashboard/request?role=${instructor.role.toLowerCase()}&mentorId=${instructor.id}`)}
-              className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:shadow-xl hover:-translate-y-0.5 hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <CalendarDays className="w-4 h-4" />
-              Request {instructor.role === "Mentor" ? "Mentorship" : "Tutoring"}
-            </button>
-            
-            <p className="text-[10px] text-slate-400 mt-3 text-center px-4">
-              Send a request to schedule a private session with {instructor.name.split(' ')[0]}.
-            </p>
-          </div>
-
-          {/* Details Section (Right) */}
-          <div className="flex-1 flex flex-col pt-2">
-            
-            {/* Stats Row */}
-            <div className="flex items-center gap-8 pb-8 border-b border-slate-100">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-2xl font-black text-slate-800">
-                  {instructor.followers} <Users className="w-5 h-5 text-indigo-400" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Followers</span>
-              </div>
-              <div className="w-px h-8 bg-slate-100" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-2xl font-black text-slate-800">
-                  {instructor.coursesCount} <BookOpen className="w-5 h-5 text-purple-400" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Courses</span>
-              </div>
-              <div className="w-px h-8 bg-slate-100" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-2xl font-black text-slate-800">
-                  {instructor.rating} <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">({instructor.reviews} Reviews)</span>
-              </div>
-            </div>
-
-            {/* About Section */}
-            <div className="py-8 border-b border-slate-100">
-              <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-4">About {instructor.name.split(' ')[0]}</h2>
-              <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                {instructor.bio}
-              </p>
-            </div>
-
-            {/* Info Grid */}
-            <div className="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</p>
-                  <p className="text-sm font-semibold text-slate-700">{instructor.email || "Hidden"}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</p>
-                  <p className="text-sm font-semibold text-slate-700">{instructor.country || "Not specified"}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
-                  <Award className="w-4 h-4 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Experience Level</p>
-                  <p className="text-sm font-semibold text-slate-700">Expert</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
-                  <CalendarDays className="w-4 h-4 text-slate-400" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Member Since</p>
-                  <p className="text-sm font-semibold text-slate-700">
-                    {instructor.joined ? new Date(instructor.joined).getFullYear() : "2024"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-          </div>
+/* ── Info card component ── */
+function InfoCard({ icon, label, value }) {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-2xl bg-white"
+      style={{
+        border: "1px solid #efefef",
+        padding: "16px 18px",
+      }}
+    >
+      {/* circular icon bg */}
+      <span
+        className="flex items-center justify-center rounded-full flex-shrink-0"
+        style={{ width: 44, height: 44, background: "#f0edff" }}
+      >
+        {icon}
+      </span>
+      <div>
+        <div
+          className="font-bold uppercase"
+          style={{ fontSize: 10, letterSpacing: "0.13em", color: "#9ca3af", marginBottom: 3 }}
+        >
+          {label}
         </div>
-
-        {/* Note about courses */}
-        <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 flex items-center justify-center mb-8">
-          <p className="text-indigo-600/80 text-sm font-medium flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Check out the search page to find courses published by {instructor.name.split(' ')[0]}.
-          </p>
+        <div className="font-semibold text-gray-900" style={{ fontSize: 14 }}>
+          {value}
         </div>
-
       </div>
     </div>
   );

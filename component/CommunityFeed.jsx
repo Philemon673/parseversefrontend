@@ -319,11 +319,17 @@ function CommunityPostCard({ post, currentUserId, onDeletePost, onLike, onDislik
                   />
                 ) : (
                   <>
-                    <img
-                      src="https://images.unsplash.com/photo-1619410283995-43d9134e7656?w=800&q=80"
-                      alt="video thumbnail"
-                      className="w-full h-full object-cover opacity-80"
-                    />
+                    {post.thumbnailUrl || post.image ? (
+                      <img
+                        src={post.thumbnailUrl || post.image}
+                        alt="video thumbnail"
+                        className="w-full h-full object-cover opacity-80"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-800 flex items-center justify-center opacity-80">
+                        <Play className="w-12 h-12 text-slate-600" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/45" />
                     <button
                       onClick={() => setPlaying(true)}
