@@ -18,17 +18,6 @@ export function NotificationProvider({ children }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchNotifications();
-      // Optional: Polling every 30s
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
-    } else {
-      setNotifications([]);
-    }
-  }, [user?.id]);
-
   const fetchNotifications = async () => {
     try {
       const res = await api.get(`/notifications/user/${user.id}`);
@@ -40,6 +29,18 @@ export function NotificationProvider({ children }) {
       console.error("Failed to fetch notifications", err);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotifications();
+      // Optional: Polling every 30s
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setNotifications([]);
+    }
+  }, [user?.id]);
+
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
