@@ -288,5 +288,12 @@ export function VideoCard({ post }) {
   );
 }
 
-
-
+export default function PostPage() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col gap-6">
+      <h1 className="text-2xl font-black text-slate-800 mb-2">Tutor Posts</h1>
+      <PostCard post={posts[0]} />
+      <VideoCard post={videoPost} />
+    </div>
+  );
+}
