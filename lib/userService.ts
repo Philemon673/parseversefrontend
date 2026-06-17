@@ -469,6 +469,65 @@ export const userService = {
     } catch (error) {
       return false;
     }
+  },
+
+  // ── Follow System API ──────────────────────────────────────────────────
+  async followUser(userId: string) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/${userId}/follow`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to follow user');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error following user:', error);
+      throw error;
+    }
+  },
+
+  async unfollowUser(userId: string) {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/${userId}/unfollow`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to unfollow user');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+      throw error;
+    }
+  },
+
+  async getFollowers(userId: string = 'me') {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/${userId}/followers`, {
+        method: 'GET',
+      });
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+      return [];
+    }
+  },
+
+  async getFollowing(userId: string = 'me') {
+    try {
+      const response = await secureRequest(`${API_BASE_URL}/users/${userId}/following`, {
+        method: 'GET',
+      });
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching following:', error);
+      return [];
+    }
   }
 };
 

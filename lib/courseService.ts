@@ -42,15 +42,16 @@ export async function createCourse(data: {
   description: string;
   category: string;
   structure: string;
-  price: string;
+  price: number;      // must be a number — backend DTO uses @IsNumber()
   isFree?: boolean;
 }) {
   try {
     // Create the course shell first
     const course = await api.post('/courses', data);
     return course;
-  } catch (err) {
-    throw new Error('Failed to create course');
+  } catch (err: any) {
+    // Surface the real server error message instead of hiding it
+    throw new Error(err?.message || 'Failed to create course');
   }
 }
 

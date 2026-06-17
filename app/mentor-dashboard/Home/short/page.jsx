@@ -226,6 +226,7 @@ export default function UploadVideoPage() {
   const [language, setLanguage] = useState("English");
   const [visibility, setVisibility] = useState("Public");
   const [focusedField, setFocusedField] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -260,6 +261,8 @@ export default function UploadVideoPage() {
       let mediaUrl = "";
       let postType = isVideo ? "VIDEO" : "IMAGE";
 
+      let thumbnailUrl = undefined;
+
       if (isVideo) {
         // 1. Initialize Bunny Stream Slot
         setProgress(15);
@@ -272,6 +275,13 @@ export default function UploadVideoPage() {
         });
 
         mediaUrl = `https://iframe.mediadelivery.net/embed/${meta.libraryId}/${meta.videoId}`;
+        
+        // 3. Upload custom thumbnail if provided
+        if (thumbnailFile) {
+          setProgress(82);
+          const thumbUpload = await uploadPostMedia(thumbnailFile, "image");
+          thumbnailUrl = thumbUpload.url;
+        }
       } else {
         // Upload image to CDN
         setProgress(40);
@@ -288,7 +298,7 @@ export default function UploadVideoPage() {
       // Save short/post
       await createPost({
         text: title + "\n\n" + description,
-        image: isVideo ? undefined : mediaUrl,
+        image: isVideo ? thumbnailUrl : mediaUrl,
         videoUrl: isVideo ? mediaUrl : undefined,
         videoDuration: videoLink.trim(), // Save the visibility link here
         type: postType,
@@ -470,6 +480,24 @@ export default function UploadVideoPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Custom Thumbnail for Video */}
+              {file && file.type.startsWith("video/") && (
+                <div>
+                  <FieldLabel
+                    label="Custom Thumbnail"
+                    optional
+                    tooltip="Upload a catchy thumbnail image to attract more views."
+                  />
+                  <div className="bg-[#faf9ff] rounded-xl border border-[#e0dcf8] p-4">
+                    <DropZone 
+                      file={thumbnailFile} 
+                      onFile={(f) => setThumbnailFile(f)} 
+                      onClear={() => setThumbnailFile(null)} 
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* External Link */}
               <div>

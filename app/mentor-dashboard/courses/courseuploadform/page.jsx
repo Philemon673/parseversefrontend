@@ -205,8 +205,8 @@ export default function CourseUploadForm({ onSubmit }) {
   function handleSubmit(e) {
     e.preventDefault();
     
-    // Validation
-    if (!courseTitle || !courseDesc || !category || !courseStructure || !price) {
+    // Validation — price is optional (blank = free course)
+    if (!courseTitle || !courseDesc || !category || !courseStructure) {
       alert("Please fill in all required fields");
       return;
     }
@@ -524,21 +524,22 @@ export default function CourseUploadForm({ onSubmit }) {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-gray-700 flex items-center justify-between">
-                    <span>Price ({CURRENCY_SYMBOL})</span>
+                    <span>Price ({CURRENCY_SYMBOL}) <span className="text-gray-400 font-normal">— optional</span></span>
                     {isFree && <span className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded-sm">FREE</span>}
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium select-none">
                       {CURRENCY_SYMBOL}
                     </span>
+                    <span className="absolute left-[calc(theme(spacing.3)+3ch)] top-1/2 -translate-y-1/2 text-gray-300 text-sm select-none">|</span>
                     <input
                       value={price}
                       onChange={(e) => setPrice(e.target.value)}
-                      className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700"
+                      className="w-full pl-16 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white text-gray-700"
                       type="number"
                       min="0"
                       step="0.01"
-                      placeholder="0.00"
+                      placeholder="0.00 (leave blank for free)"
                     />
                   </div>
                 </div>

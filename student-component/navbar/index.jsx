@@ -38,7 +38,7 @@ export default function Navbar() {
   // Check if we are on one of the searchbar tag pages
   const isTagPage = 
     pathname === "/student-dashboard/Home/courses" || 
-    pathname === "/student-dashboard/Home/resources" || 
+    pathname === "/student-dashboard/Home/Resources" || 
     pathname === "/student-dashboard/Home/live";
 
   return (

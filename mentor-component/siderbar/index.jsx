@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SidebarBg from "@/assets/contentsider.png";
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { useNotifications } from "@/lib/notification-context";
 import { useAuth } from "@/lib/auth-context";
+import { userService } from "@/lib/userService";
+import { Users, X } from "lucide-react";
 
 const navItems = [
   { icon: Home,          label: "Home",          href: "/mentor-dashboard/Home" },
@@ -32,6 +34,18 @@ function LogoutButton() {
   const [loggingOut, setLoggingOut] = useState(false);
   const { logout } = useAuth();
   const router = useRouter();
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (showConfirm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showConfirm]);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -51,7 +65,12 @@ function LogoutButton() {
       {/* Trigger button */}
       <div className="pt-4 mt-4 mx-2 pb-2">
         <button
-          onClick={() => setShowConfirm(true)}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowConfirm(true);
+          }}
           className="w-full flex items-center px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-red-500 hover:border-red-400 transition-all duration-300 text-sm font-semibold text-white/90 hover:text-white group shadow-sm"
         >
           <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors mr-3">
@@ -67,11 +86,17 @@ function LogoutButton() {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => !loggingOut && setShowConfirm(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!loggingOut) setShowConfirm(false);
+            }}
           />
 
           {/* Modal card */}
-          <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-[320px] flex flex-col items-center gap-4">
+          <div 
+            className="relative z-10 bg-white rounded-2xl shadow-2xl p-6 w-[320px] flex flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Icon */}
             <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
               <LogOut className="w-7 h-7 text-red-500" />
@@ -181,6 +206,9 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Followers Card */}
+        <FollowersCard />
+
         {/* Upgrade Card */}
         <div className="mt-auto mx-2 rounded-2xl bg-gradient-to-br from-purple-600/80 to-indigo-700/80 backdrop-blur-sm border border-white/20 p-4 text-center shadow-xl">
           <p className="text-white font-semibold text-sm">Upgrade to PRO</p>
@@ -194,5 +222,91 @@ export default function Sidebar() {
         <LogoutButton />
       </div>
     </aside>
+  );
+}
+
+// ── Followers Card & Modal ───────────────────────────────────────────────────
+function FollowersCard() {
+  const [followers, setFollowers] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    userService.getFollowers("me")
+      .then((data) => setFollowers(data || []))
+      .catch(console.error);
+  }, []);
+
+  if (followers.length === 0) return null;
+
+  return (
+    <>
+      <div 
+        onClick={() => setShowModal(true)}
+        className="mx-2 mt-4 mb-2 p-3 rounded-2xl bg-white/10 hover:bg-white/15 transition cursor-pointer border border-white/5 shadow-sm"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-white/90">
+            <Users className="w-3.5 h-3.5" />
+            <span className="text-xs font-semibold">Followers</span>
+          </div>
+          <span className="text-xs font-bold text-indigo-200 bg-indigo-900/50 px-2 py-0.5 rounded-full">
+            {followers.length}
+          </span>
+        </div>
+        
+        <div className="flex -space-x-2 overflow-hidden">
+          {followers.slice(0, 5).map((u, i) => (
+            <div key={u.id || i} className="inline-block h-6 w-6 rounded-full ring-2 ring-indigo-950 bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[9px] font-bold text-white shadow-sm overflow-hidden">
+              {u.avatar ? (
+                <img src={u.avatar} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase() || "U"
+              )}
+            </div>
+          ))}
+          {followers.length > 5 && (
+            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-indigo-950 bg-white/20 flex items-center justify-center text-[9px] font-bold text-white shadow-sm backdrop-blur-sm">
+              +{followers.length - 5}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="font-black text-slate-800 flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-indigo-600" />
+                Your Followers ({followers.length})
+              </h3>
+              <button onClick={() => setShowModal(false)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-500 transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-2 overflow-y-auto flex-1">
+              {followers.map(u => (
+                <div key={u.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl transition">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-sm overflow-hidden flex-shrink-0">
+                    {u.avatar ? (
+                      <img src={u.avatar} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      `${u.firstName?.[0] || ""}${u.lastName?.[0] || ""}`.toUpperCase() || "U"
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800 leading-tight">
+                      {`${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{u.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

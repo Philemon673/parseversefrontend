@@ -112,7 +112,8 @@ export default function CoursesPage() {
         description: courseData.description,
         category: courseData.category,
         structure: courseData.structure,
-        price: courseData.price,
+        // Parse to float — strip any currency prefix and send as number (backend @IsNumber())
+        price: parseFloat(String(courseData.price).replace(/[^0-9.]/g, "")) || 0,
         isFree: courseData.isFree,
       });
 

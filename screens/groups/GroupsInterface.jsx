@@ -11,6 +11,7 @@ import EmojiPicker from "emoji-picker-react";
 import { useSocket } from "@/lib/socket-context";
 import { useAuth } from "@/lib/auth-context";
 import { forumService } from "@/lib/forumService";
+import { userService } from "@/lib/userService";
 
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 
@@ -502,10 +503,10 @@ function GroupSettingsModal({ isOpen, onClose, group, onUpdateInfo, onMuteToggle
     }
   }, [group, isOpen]);
 
-  // Load all users to allow adding them
+  // Load all followers to allow adding them
   useEffect(() => {
     if (!isOpen) return;
-    forumService.getAllUsers()
+    userService.getFollowers("me")
       .then(setAllUsers)
       .catch(console.error);
   }, [isOpen]);

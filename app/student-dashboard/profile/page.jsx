@@ -124,6 +124,7 @@ export default function StudentProfilePage() {
         country: "",
         phone: "",
         city: "",
+        field: "",
     });
 
     const [savedData, setSavedData] = useState({ ...formData });
@@ -159,9 +160,10 @@ export default function StudentProfilePage() {
                 firstName: userData.firstName,
                 lastName: userData.lastName,
                 email: userData.email,
-                country: userData.country,
-                phone: userData.phone,
-                city: userData.city,
+                country: userData.country || "",
+                phone: userData.phone || "",
+                city: userData.city || "",
+                field: userData.field || (userData.interests && userData.interests.length > 0 ? userData.interests.join(", ") : ""),
             };
             
             setFormData(profileData);
@@ -186,7 +188,12 @@ export default function StudentProfilePage() {
                 return;
             }
             
-            const updatedUser = await userService.updateUserProfile(currentUser.id, formData);
+            const payload = { ...formData };
+            if (payload.field) {
+                payload.interests = payload.field.split(",").map(i => i.trim()).filter(Boolean);
+            }
+
+            const updatedUser = await userService.updateUserProfile(currentUser.id, payload);
             setUser(updatedUser);
             setSavedData({ ...formData });
             setEditing(false);
@@ -500,6 +507,16 @@ export default function StudentProfilePage() {
                                         editing={editing}
                                         placeholder="Enter city"
                                     />
+                                    <EditableField
+                                        icon={<BookOpen className="w-4 h-4" />}
+                                        value={formData.field}
+                                        onChange={update("field")}
+                                        editing={editing}
+                                        placeholder="Field of Interest (e.g. Science, Math)"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
                                     <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50">
                                         <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="#facc15" />
                                         <span className="flex-1 text-xs text-slate-600">

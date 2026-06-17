@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Heart,
   ThumbsDown,
@@ -203,6 +203,46 @@ function CommunityPostCard({ post, currentUserId, onDeletePost, onLike, onDislik
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
+  const videoContainerRef = useRef(null);
+
+  const isPaidVideo = post.tags?.some(tag => (tag.label || tag).toLowerCase() === "paid");
+
+  useEffect(() => {
+    if (post.type !== "VIDEO" || !post.videoUrl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setPlaying(true);
+          } else {
+            setPlaying(false);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+
+    return () => {
+      if (videoContainerRef.current) observer.unobserve(videoContainerRef.current);
+    };
+  }, [post.type, post.videoUrl]);
+
+  useEffect(() => {
+    let timer;
+    if (playing && isPaidVideo && post.type === "VIDEO") {
+      timer = setTimeout(() => {
+        setPlaying(false);
+      }, 30000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [playing, isPaidVideo, post.type]);
 
   const author = post.author || {};
   const initials = getInitials(author.firstName, author.lastName);
@@ -308,11 +348,11 @@ function CommunityPostCard({ post, currentUserId, onDeletePost, onLike, onDislik
         {/* Left: Media Player / Thumbnail */}
         {(post.type === "VIDEO" || post.image || post.videoUrl) && (
           <div className="flex-1 p-5 bg-slate-50/50 flex items-center justify-center">
-            <div className="relative w-full h-80 rounded-2xl overflow-hidden shadow-inner bg-black border border-slate-100/70">
+            <div ref={videoContainerRef} className="relative w-full h-80 rounded-2xl overflow-hidden shadow-inner bg-black border border-slate-100/70">
               {post.type === "VIDEO" && post.videoUrl ? (
                 playing ? (
                   <iframe
-                    src={post.videoUrl}
+                    src={post.videoUrl + (post.videoUrl.includes("?") ? "&" : "?") + "autoplay=true"}
                     className="w-full h-full border-0 absolute inset-0"
                     allow="autoplay; encrypted-media; picture-in-picture;"
                     allowFullScreen
